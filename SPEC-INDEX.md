@@ -1,0 +1,25 @@
+# Mentor Platform Spec v1.0 — File Index
+
+- `AGENTS.md`
+- `README.md`
+- `implementation/implementation-plan.md`
+- `implementation/task-breakdown.md`
+- `specs/00-product-spec.md`
+- `specs/01-business-rules.md`
+- `specs/02-domain-model.md`
+- `specs/03-architecture-spec.md`
+- `specs/04-database-spec.md`
+- `specs/05-api-spec.md`
+- `specs/06-verification-state-machine.md`
+- `specs/07-permission-spec.md`
+- `specs/08-payment-and-settlement.md`
+- `specs/09-im-spec.md`
+- `specs/10-privacy-and-minors.md`
+- `specs/11-pages-and-ui.md`
+- `specs/12-admin-spec.md`
+- `specs/13-security-spec.md`
+- `specs/14-test-strategy.md`
+- `specs/15-analytics-spec.md`
+- `specs/16-ai-matching-spec.md`
+- `tests/acceptance-tests.md`
+- `tests/api-contract-examples.md`
