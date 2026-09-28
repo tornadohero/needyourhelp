@@ -1,10 +1,35 @@
-# AGENTS.md — CodeBuddy execution contract
+# AGENTS.md — CodeBuddy Execution Contract
 
-## Mission
+## 1. Mission
 
 You are implementing Mentor Platform from the repository specs. Your job is to execute approved tasks, not redesign the product.
 
-## Before every task
+Do not invent product requirements.
+
+If implementation conflicts with a specification, stop and report the conflict.
+
+## 2. Source of Truth
+
+The `specs/` directory is the single source of truth for product requirements, domain rules, architecture, database design, API contracts, security, privacy and acceptance criteria.
+
+Before implementing any feature:
+
+1. Read the relevant specification files.
+2. Inspect the current implementation.
+3. Identify dependencies.
+4. Implement only the requested task.
+5. Add or update tests.
+6. Run typecheck, lint and tests.
+7. Report the implementation result.
+
+Repository reading order:
+
+1. This file.
+2. The task file in `implementation/task-breakdown.md`.
+3. All specs referenced by that task.
+4. `implementation/implementation-plan.md` for phase context.
+
+## 3. Before Every Task
 
 1. Read this file.
 2. Read the task file.
@@ -13,24 +38,61 @@ You are implementing Mentor Platform from the repository specs. Your job is to e
 5. Identify impacted modules, DB tables, APIs and UI.
 6. If the task conflicts with a spec, STOP and report the conflict. Do not silently reinterpret it.
 
-## Architecture constraints
+## 4. Development Strategy
+
+Implement the system incrementally.
+
+Never attempt to implement the entire product in one operation.
+
+The implementation order is defined in:
+
+`implementation/task-breakdown.md`
+
+Tasks should normally be executed sequentially. Execute tasks strictly in order unless a dependency is explicitly satisfied.
+
+For each task:
+
+1. Read task specification.
+2. Inspect existing code.
+3. Create implementation plan.
+4. Implement.
+5. Write tests.
+6. Run lint, typecheck, unit tests and integration tests where relevant.
+7. Review `git diff`.
+8. Report: files changed, functionality implemented, tests executed, remaining issues.
+
+Do not automatically start the next task unless the user asks you to continue.
+
+## 5. Architecture Constraints
+
+Use a modular monolith for V1. Do not introduce microservices in V1. Do not introduce unnecessary infrastructure.
 
 - Backend: NestJS + TypeScript.
 - Database: PostgreSQL + Prisma ORM.
-- Redis: caching, idempotency, short-lived locks.
+- Cache/locks: Redis for caching, idempotency and short-lived locks.
 - Frontend: WeChat Mini Program with TypeScript; use a consistent component/design system.
 - Admin: Next.js + TypeScript.
 - API style: REST JSON under `/api/v1`.
-- Validation: DTO/schema validation at API boundary.
+- Validation: DTO/schema validation at the API boundary.
 - Auth: WeChat login -> server-issued access/refresh session.
-- Authorization: RBAC + resource ownership.
-- Money: integer minor units (`amountFen`, `amountCent`), never floating point.
+- Authorization: RBAC + resource ownership + field-level access, enforced server-side.
+- Money: integer minor units (`amountFen`, `amountCent`), never floating point. Column naming in the DB spec is `amount_minor`.
 - Time: UTC in DB; API timestamps ISO-8601; display in configured user timezone.
 - IDs: UUID/ULID; never expose sequential DB IDs as public identifiers.
 - Soft delete where business history must be preserved.
 - Audit log for admin, verification, payment, refund, settlement, moderation and permission changes.
 
-## Coding rules
+Layering:
+
+```text
+controller
+  -> application use case
+     -> domain service / aggregate
+        -> repository interface
+           -> infrastructure adapter
+```
+
+## 6. Coding Rules
 
 - Small modules, explicit dependencies, no circular dependencies.
 - Domain rules live in domain/application services, not controllers.
@@ -43,34 +105,138 @@ You are implementing Mentor Platform from the repository specs. Your job is to e
 - Use transactions for state changes that must be atomic.
 - Use idempotency keys for create-order, payment callback, refund and settlement operations.
 - Avoid N+1 queries.
-- Add DB indexes based on query patterns in the DB spec.
+- Add DB indexes based on the query patterns in the DB spec.
 
-## Security rules
+## 7. Domain and Product Rules
 
-- Secrets only via environment/secret manager.
-- Never log passwords, tokens, ID-card numbers, raw identity documents, payment secrets or message contents unless a specific redacted audit requirement exists.
+The following rules are mandatory:
+
+- V1 tutoring is the default enabled marketplace; career marketplace is feature-flagged.
+- Provider verification is separate from provider approval.
+- Identity verification does not automatically grant permission to provide services.
+- Teacher compliance is a separate state.
+- Provider cannot publish services before approval.
+- Provider must be approved before being discoverable or orderable.
+- A user may have multiple roles.
+- One person may have multiple provider capabilities, but each capability has its own verification/status.
+- Child profile belongs to a parent/guardian account.
+- Child profiles are private. There is no public child profile.
+- Child data is minimized and is not public.
+- Sensitive identity documents are never public.
+- Client cannot determine price.
+- Client cannot determine order status.
+- Payment success must be confirmed by the server.
+- Order status can only change through explicit state transitions.
+- Refund amount must be calculated by the server.
+- Review requires an eligible completed order.
+- Reviews are tied to completed orders.
+- No review manipulation: one review per eligible order unless an approved edit flow exists.
+- Provider and customer may not exchange direct contact information in public profile fields.
+- IM must support report/block/moderation hooks.
+- Admin mutations must be audited.
+
+## 8. Money
+
+All monetary values must use integer minor units.
+
+Example: 100 RMB = 10000 cents.
+
+Never use floating point for money.
+
+Platform fee and provider payout are calculated server-side, and every fee version is recorded with the order.
+
+All payment/refund operations must be idempotent.
+
+## 9. Security and Privacy Rules
+
+- Secrets only via environment/secret manager. Never commit secrets.
+- Server-side enforcement only. Do not rely on frontend authorization.
+- All protected resources require authentication and authorization.
+
+Never expose:
+
+- identity-card numbers
+- identity documents
+- private phone numbers
+- private addresses
+- child personal information
+- internal moderation notes
+- payment secrets
+- access tokens
+- refresh tokens
+
+Never log:
+
+- passwords
+- access tokens / refresh tokens
+- ID-card numbers
+- raw identity documents
+- payment secrets
+- message contents
+- full child profiles
+
+(Unless a specific redacted audit requirement exists.)
+
+Additional controls:
+
 - Encrypt sensitive data at rest where supported.
-- Signed URLs for private files.
+- Signed URLs for private files; private bucket for verification documents.
 - File uploads require type/size validation and malware/content checks where infrastructure supports it.
 - Rate-limit authentication, messaging, verification, payment and public search APIs.
 - All admin APIs require admin role and audit logging.
 - Do not expose internal moderation notes to normal users.
 
-## Product rules
+## 10. API Rules
 
-- V1 tutoring is the default enabled marketplace.
-- Career marketplace is feature-flagged.
-- Provider must be approved before being discoverable or orderable.
-- A user may have multiple roles.
-- One person may have multiple provider capabilities, but each capability has its own verification/status.
-- Child profile belongs to a parent/guardian account.
-- Child data is minimized and is not public.
-- Reviews are tied to completed orders.
-- No review manipulation: one review per eligible order unless an approved edit flow exists.
-- Provider and customer may not exchange direct contact information in public profile fields.
-- IM must support report/block/moderation hooks.
+API base: `/api/v1`.
 
-## Task completion checklist
+Use DTOs.
+
+Never serialize ORM entities directly to API responses.
+
+Every API response must expose only fields allowed by the specification. Response DTOs must be allowlists, not ORM entity serialization.
+
+## 11. Database Rules
+
+Use Prisma migrations.
+
+Never manually modify production database schema.
+
+Every schema change requires:
+
+- migration
+- relevant indexes
+- tests
+- updated specification if behavior changes
+
+## 12. Testing Rules
+
+Every business rule must have tests.
+
+At minimum test:
+
+- authentication
+- authorization
+- provider approval
+- child data isolation
+- order state machine
+- payment idempotency
+- refund limits
+- review eligibility
+- admin permissions
+
+For every protected endpoint test:
+
+- authenticated success
+- unauthenticated failure
+- wrong-role failure
+- wrong-resource-owner failure
+- invalid input
+- rate limit where relevant
+
+Critical user journeys require E2E tests (see `specs/14-test-strategy.md`).
+
+## 13. Task Completion Checklist
 
 Before marking a task done:
 
@@ -86,226 +252,37 @@ Before marking a task done:
 - [ ] README/spec references updated if behavior changed.
 - [ ] `git diff` reviewed for accidental secrets or unrelated changes.
 
-## Git discipline
+## 14. Git Discipline
 
 One logical task = one commit when practical.
 
 Commit format:
-`feat(scope): ...`
-`fix(scope): ...`
-`test(scope): ...`
-`chore(scope): ...`
-`docs(scope): ...`
 
-Do not squash unrelated work. Do not rewrite shared history.
+```text
+feat(scope): ...
+fix(scope): ...
+test(scope): ...
+chore(scope): ...
+docs(scope): ...
+```
 
-# Mentor Platform AI Development Rules
+Use small logical commits. Do not squash unrelated work. Do not rewrite shared history.
 
-## 1. Source of Truth
+Never commit secrets. Never modify unrelated files.
 
-The `/spec` directory is the single source of truth for product requirements, domain rules, architecture, database design, API contracts, security, privacy and acceptance criteria.
-
-Before implementing any feature:
-
-1. Read the relevant specification files.
-2. Inspect the current implementation.
-3. Identify dependencies.
-4. Implement only the requested task.
-5. Add or update tests.
-6. Run typecheck, lint and tests.
-7. Report the implementation result.
-
-Do not invent product requirements.
-
-If implementation conflicts with the specification, stop and report the conflict.
-
-## 2. Development Strategy
-
-Implement the system incrementally.
-
-Never attempt to implement the entire product in one operation.
-
-The implementation order is defined in:
-
-`/implementation/task-breakdown.md`
-
-Tasks should normally be executed sequentially.
-
-## 3. Architecture
-
-Use a modular monolith for V1.
-
-Backend:
-
-* NestJS
-* TypeScript
-* PostgreSQL
-* Prisma
-* Redis
-
-Frontend:
-
-* WeChat Mini Program
-* TypeScript
-
-Admin:
-
-* Next.js
-* TypeScript
-
-Do not introduce microservices in V1.
-
-Do not introduce unnecessary infrastructure.
-
-## 4. Domain Rules
-
-The following rules are mandatory:
-
-* Provider verification is separate from provider approval.
-* Identity verification does not automatically grant permission to provide services.
-* Teacher compliance is a separate state.
-* Provider cannot publish services before approval.
-* Client cannot determine price.
-* Client cannot determine order status.
-* Payment success must be confirmed by the server.
-* Order status can only change through explicit state transitions.
-* Refund amount must be calculated by the server.
-* Review requires an eligible completed order.
-* Child profiles are private.
-* Sensitive identity documents are never public.
-* Admin mutations must be audited.
-
-## 5. Security
-
-Never expose:
-
-* identity-card numbers
-* identity documents
-* private phone numbers
-* private addresses
-* internal moderation notes
-* payment secrets
-* access tokens
-* refresh tokens
-
-Never log sensitive personal information.
-
-All protected resources require authorization.
-
-Do not rely on frontend authorization.
-
-## 6. Money
-
-All monetary values must use integer minor units.
-
-Example:
-
-100 RMB = 10000 cents.
-
-Never use floating point for money.
-
-All payment/refund operations must be idempotent.
-
-## 7. API
-
-API base:
-
-`/api/v1`
-
-Use DTOs.
-
-Never serialize ORM entities directly to API responses.
-
-Every API response must expose only fields allowed by the specification.
-
-## 8. Database
-
-Use Prisma migrations.
-
-Never manually modify production database schema.
-
-Every schema change requires:
-
-* migration
-* relevant indexes
-* tests
-* updated specification if behavior changes
-
-## 9. Testing
-
-Every business rule must have tests.
-
-At minimum test:
-
-* authentication
-* authorization
-* provider approval
-* child data isolation
-* order state machine
-* payment idempotency
-* refund limits
-* review eligibility
-* admin permissions
-
-Critical user journeys require E2E tests.
-
-## 10. Task Execution
-
-For each task:
-
-1. Read task specification.
-2. Inspect existing code.
-3. Create implementation plan.
-4. Implement.
-5. Write tests.
-6. Run:
-
-   * lint
-   * typecheck
-   * unit tests
-   * integration tests where relevant
-7. Review git diff.
-8. Report:
-
-   * files changed
-   * functionality implemented
-   * tests executed
-   * remaining issues
-
-Do not automatically start the next task.
-
-## 11. Git
-
-Use small logical commits.
-
-Preferred format:
-
-`feat(scope): description`
-
-`fix(scope): description`
-
-`test(scope): description`
-
-`docs(scope): description`
-
-Never commit secrets.
-
-Never modify unrelated files.
-
-## 12. AI Behavior
+## 15. AI Behavior
 
 Do not:
 
-* invent APIs
-* invent database fields
-* invent business rules
-* bypass state machines
-* silently change architecture
-* install unnecessary dependencies
-* create fake production integrations
-* replace real payment verification with client-side success callbacks
+- invent APIs
+- invent database fields
+- invent business rules
+- bypass state machines
+- silently change architecture
+- install unnecessary dependencies
+- create fake production integrations
+- replace real payment verification with client-side success callbacks
 
 When uncertain, inspect the specification first.
 
 If the specification is insufficient, stop and ask for clarification.
-
