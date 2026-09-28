@@ -1,0 +1,13 @@
+// Prisma bootstrap for T001.
+//
+// T002 owns the real schema: models, enums, indexes and migrations come from
+// `specs/04-database-spec.md`. Do not add models here ahead of that task.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

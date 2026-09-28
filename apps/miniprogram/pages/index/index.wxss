@@ -1,0 +1,16 @@
+.container {
+  padding: 48rpx;
+}
+
+.title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 600;
+}
+
+.subtitle {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  color: #888888;
+}

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+coverage/
+.next/
+miniprogram_npm/
+pnpm-lock.yaml
+*.wxml
+*.wxss
+*.miniprogram
+specs/
+implementation/
+tests/
+.specify/
+.codebuddy/

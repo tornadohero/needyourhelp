@@ -11,6 +11,12 @@ coverage/
 .turbo/
 *.tsbuildinfo
 
+# next.js
+.next/
+out/
+next-env.d.ts
+.vercel
+
 # miniprogram
 miniprogram_npm/
 apps/miniprogram/miniprogram_npm/
