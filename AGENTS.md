@@ -98,3 +98,214 @@ Commit format:
 `docs(scope): ...`
 
 Do not squash unrelated work. Do not rewrite shared history.
+
+# Mentor Platform AI Development Rules
+
+## 1. Source of Truth
+
+The `/spec` directory is the single source of truth for product requirements, domain rules, architecture, database design, API contracts, security, privacy and acceptance criteria.
+
+Before implementing any feature:
+
+1. Read the relevant specification files.
+2. Inspect the current implementation.
+3. Identify dependencies.
+4. Implement only the requested task.
+5. Add or update tests.
+6. Run typecheck, lint and tests.
+7. Report the implementation result.
+
+Do not invent product requirements.
+
+If implementation conflicts with the specification, stop and report the conflict.
+
+## 2. Development Strategy
+
+Implement the system incrementally.
+
+Never attempt to implement the entire product in one operation.
+
+The implementation order is defined in:
+
+`/implementation/task-breakdown.md`
+
+Tasks should normally be executed sequentially.
+
+## 3. Architecture
+
+Use a modular monolith for V1.
+
+Backend:
+
+* NestJS
+* TypeScript
+* PostgreSQL
+* Prisma
+* Redis
+
+Frontend:
+
+* WeChat Mini Program
+* TypeScript
+
+Admin:
+
+* Next.js
+* TypeScript
+
+Do not introduce microservices in V1.
+
+Do not introduce unnecessary infrastructure.
+
+## 4. Domain Rules
+
+The following rules are mandatory:
+
+* Provider verification is separate from provider approval.
+* Identity verification does not automatically grant permission to provide services.
+* Teacher compliance is a separate state.
+* Provider cannot publish services before approval.
+* Client cannot determine price.
+* Client cannot determine order status.
+* Payment success must be confirmed by the server.
+* Order status can only change through explicit state transitions.
+* Refund amount must be calculated by the server.
+* Review requires an eligible completed order.
+* Child profiles are private.
+* Sensitive identity documents are never public.
+* Admin mutations must be audited.
+
+## 5. Security
+
+Never expose:
+
+* identity-card numbers
+* identity documents
+* private phone numbers
+* private addresses
+* internal moderation notes
+* payment secrets
+* access tokens
+* refresh tokens
+
+Never log sensitive personal information.
+
+All protected resources require authorization.
+
+Do not rely on frontend authorization.
+
+## 6. Money
+
+All monetary values must use integer minor units.
+
+Example:
+
+100 RMB = 10000 cents.
+
+Never use floating point for money.
+
+All payment/refund operations must be idempotent.
+
+## 7. API
+
+API base:
+
+`/api/v1`
+
+Use DTOs.
+
+Never serialize ORM entities directly to API responses.
+
+Every API response must expose only fields allowed by the specification.
+
+## 8. Database
+
+Use Prisma migrations.
+
+Never manually modify production database schema.
+
+Every schema change requires:
+
+* migration
+* relevant indexes
+* tests
+* updated specification if behavior changes
+
+## 9. Testing
+
+Every business rule must have tests.
+
+At minimum test:
+
+* authentication
+* authorization
+* provider approval
+* child data isolation
+* order state machine
+* payment idempotency
+* refund limits
+* review eligibility
+* admin permissions
+
+Critical user journeys require E2E tests.
+
+## 10. Task Execution
+
+For each task:
+
+1. Read task specification.
+2. Inspect existing code.
+3. Create implementation plan.
+4. Implement.
+5. Write tests.
+6. Run:
+
+   * lint
+   * typecheck
+   * unit tests
+   * integration tests where relevant
+7. Review git diff.
+8. Report:
+
+   * files changed
+   * functionality implemented
+   * tests executed
+   * remaining issues
+
+Do not automatically start the next task.
+
+## 11. Git
+
+Use small logical commits.
+
+Preferred format:
+
+`feat(scope): description`
+
+`fix(scope): description`
+
+`test(scope): description`
+
+`docs(scope): description`
+
+Never commit secrets.
+
+Never modify unrelated files.
+
+## 12. AI Behavior
+
+Do not:
+
+* invent APIs
+* invent database fields
+* invent business rules
+* bypass state machines
+* silently change architecture
+* install unnecessary dependencies
+* create fake production integrations
+* replace real payment verification with client-side success callbacks
+
+When uncertain, inspect the specification first.
+
+If the specification is insufficient, stop and ask for clarification.
+
