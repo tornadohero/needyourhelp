@@ -68,6 +68,7 @@ Needs:
 - Search/filter.
 - Provider detail.
 - Conversation entry.
+- Availability slots (basic create/list/delete; required because `specs/01-business-rules.md` allows order creation only against valid service availability).
 - Booking/order.
 - WeChat payment adapter.
 - Order lifecycle.
@@ -80,7 +81,7 @@ Needs:
 - Basic analytics.
 
 ### V1.1
-- Availability calendar.
+- Availability calendar UI (visual scheduling, drag-to-edit and recurrence editing; basic slot CRUD is already in V1).
 - Provider earnings/settlement.
 - Refund workflow.
 - Coupons.

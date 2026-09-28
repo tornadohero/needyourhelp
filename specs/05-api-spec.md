@@ -152,6 +152,24 @@ All admin routes require admin permissions.
 `POST /admin/platform-rules`
 `POST /admin/platform-rules/:id/publish`
 
+### Taxonomy
+
+`GET /admin/taxonomy`
+Query:
+- type (`SUBJECT|GRADE|SKILL|CITY`)
+- parentId
+- active
+- page
+- pageSize
+
+`POST /admin/taxonomy`
+`PATCH /admin/taxonomy/:id`
+`POST /admin/taxonomy/:id/archive`
+
+Notes:
+- Taxonomy terms are archived (set `active=false`), never hard-deleted, because `service_terms` references them and historical orders depend on the taxonomy snapshot.
+- Every taxonomy mutation is audited (see `specs/12-admin-spec.md` and task T008).
+
 ## Error codes
 
 `AUTH_REQUIRED`

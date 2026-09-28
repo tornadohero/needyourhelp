@@ -6,6 +6,7 @@ PostgreSQL. Prisma recommended.
 
 ```text
 users 1---N user_roles N---1 roles
+users 1---N sessions
 users 1---1 parent_profiles
 users 1---N child_profiles
 users 1---N provider_profiles
@@ -23,7 +24,9 @@ users 1---N reviews
 users N---N conversations
 conversations 1---N message_refs
 users 1---N reports
+reports 1---1 moderation_cases
 users 1---N blocks
+users 1---N notifications
 users 1---N audit_logs
 ```
 
@@ -46,6 +49,26 @@ users 1---N audit_logs
 - role
 - created_at
 PK `(user_id, role)`
+
+### sessions
+- id UUID PK
+- user_id
+- refresh_token_hash unique
+- access_token_jti nullable
+- device_label nullable
+- ip_hash nullable
+- user_agent_hash nullable
+- expires_at
+- revoked_at nullable
+- revoked_reason nullable
+- rotated_from_session_id nullable
+- created_at
+- updated_at
+
+Notes:
+- Only token hashes are stored; never store raw access/refresh tokens.
+- Refresh tokens rotate on every use; the previous session is revoked or marked rotated.
+- Revoke on logout, password/security event, or admin suspension.
 
 ### parent_profiles
 - id
@@ -254,11 +277,61 @@ Do not persist full message content unless required by the selected IM/complianc
 - created_at
 - updated_at
 
+### moderation_cases
+- id UUID PK
+- source_report_id nullable
+- case_type
+- target_type (`USER|PROVIDER|SERVICE|ORDER|REVIEW|MESSAGE|CONVERSATION`)
+- target_id
+- status (`OPEN|INVESTIGATING|ACTION_REQUIRED|RESOLVED|APPEALED|FINALIZED`)
+- severity nullable
+- assigned_moderator_id nullable
+- decision nullable
+- decision_reason nullable
+- action_taken nullable
+- appeal_reason nullable
+- appeal_reviewer_id nullable
+- before_json nullable
+- after_json nullable
+- created_at
+- updated_at
+
+Notes:
+- `moderation_cases` owns the moderation state machine in `specs/06-verification-state-machine.md`; `reports` remains the intake record.
+- A report may create at most one active moderation case per target.
+- Every decision must be audited in `audit_logs`.
+- Appeal must be independently reviewed where feasible: an `APPEALED` case must not be reviewed by the moderator who made the original decision.
+
 ### blocks
 - blocker_user_id
 - blocked_user_id
 - created_at
 PK `(blocker_user_id, blocked_user_id)`
+
+### notifications
+- id UUID PK
+- user_id
+- channel (`IN_APP|WECHAT_SUBSCRIBE|SMS|EMAIL`)
+- event_type (`ORDER_CREATED|PAYMENT_SUCCEEDED|BOOKING_CONFIRMED|CANCELLED|REFUND_SUCCEEDED|REVIEW_REMINDER|VERIFICATION_RESULT|MODERATION_RESULT`)
+- title
+- body_template_code
+- body_params_json nullable
+- related_resource_type nullable
+- related_resource_id nullable
+- dedupe_key nullable
+- status (`PENDING|SENT|FAILED|SUPPRESSED`)
+- read_at nullable
+- sent_at nullable
+- failure_reason nullable
+- retry_count integer default 0
+- created_at
+- updated_at
+
+Notes:
+- Notifications are generated server-side (see `specs/09-im-spec.md` system messages).
+- Store template code + params, not rendered text containing personal data. Never persist child names or identity data in notification bodies.
+- `dedupe_key` unique where present, to prevent duplicate sends from retried domain events.
+- Preferences/consent (`MARKETING` consent type) must be checked before sending non-transactional notifications.
 
 ### audit_logs
 - id
@@ -299,9 +372,86 @@ PK `(blocker_user_id, blocked_user_id)`
 - config_json
 - updated_at
 
+## Deferred tables (V1.1+ / feature-flagged)
+
+These tables exist so every aggregate named in `specs/02-domain-model.md` has a database
+mapping. They are **NOT part of the V1 schema**: do not create them in the V1 migration.
+They are enabled together with the `settlement_enabled` and `career_marketplace_enabled`
+feature flags.
+
+### settlements
+- id UUID PK
+- settlement_no unique
+- provider_id
+- period_start
+- period_end
+- currency
+- captured_amount_minor
+- refund_amount_minor
+- fee_amount_minor
+- payout_amount_minor
+- status (`DRAFT|PENDING|PAID|FAILED|RECONCILING|CLOSED`)
+- reconciliation_status (`UNRECONCILED|MATCHED|DISCREPANCY`)
+- payout_reference nullable
+- paid_at nullable
+- created_at
+- updated_at
+
+Notes:
+- Derived from `specs/08-payment-and-settlement.md`: a batch references captured orders, refunds/disputes reduce the settlement, and every settlement carries a reconciliation status.
+- Payout amount is immutable once `PAID`. Corrections are appended as new records, never edits to a paid settlement.
+- Index `(provider_id, period_start desc)`, `(status, created_at)`.
+
+### settlement_items
+- id UUID PK
+- settlement_id
+- order_id
+- captured_amount_minor
+- refund_amount_minor
+- fee_amount_minor
+- payout_amount_minor
+- created_at
+Unique `(settlement_id, order_id)`.
+
+Notes:
+- An order belongs to at most one settlement batch; a correction adds a new item rather than mutating an existing one.
+- Index `(order_id)`.
+
+### career_goals
+- id UUID PK
+- user_id
+- title
+- description nullable
+- status (`ACTIVE|ACHIEVED|ARCHIVED`)
+- created_at
+- updated_at
+
+Notes:
+- Draft. `Career` bounded context object per `specs/02-domain-model.md`.
+- The full field list (target industry/role/timeline) must be specified in a dedicated career spec before the Career phase is implemented.
+- Visible only when `career_marketplace_enabled=true`.
+- Index `(user_id, status)`.
+
+### mentor_capabilities
+- id UUID PK
+- provider_id
+- capability_type (`CAREER_MENTOR`)
+- status
+- verification_level
+- compliance_status
+- created_at
+- updated_at
+
+Notes:
+- Draft. Career-specific counterpart of `provider_capabilities`.
+- Reuses the provider verification and approval state machines in `specs/06-verification-state-machine.md`; do not create a parallel approval flow.
+- Index `(provider_id, capability_type, status)`.
+
 ## Indexes
 
 Required:
+- sessions(user_id, revoked_at)
+- sessions(expires_at) — for cleanup of expired sessions
 - provider_profiles(searchable, approval_status, city_code)
 - provider_capabilities(provider_id, capability_type, status)
 - services(provider_id, status)
@@ -312,6 +462,12 @@ Required:
 - payments(order_id)
 - reviews(reviewee_user_id, created_at desc)
 - reports(status, created_at)
+- moderation_cases(status, created_at desc)
+- moderation_cases(target_type, target_id)
+- moderation_cases(assigned_moderator_id, status)
+- notifications(user_id, created_at desc)
+- notifications(user_id, status, read_at)
+- notifications dedupe_key UNIQUE (nullable)
 - audit_logs(resource_type, resource_id, created_at desc)
 
 ## Data retention

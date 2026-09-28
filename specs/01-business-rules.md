@@ -69,6 +69,10 @@ An order can only be created for:
 
 Order status:
 `PENDING_PAYMENT -> PAID -> CONFIRMED -> IN_PROGRESS -> COMPLETED`
+
+Non-terminal intermediate state:
+`REFUND_PENDING` (`PAID -> REFUND_PENDING -> REFUNDED`, see `specs/06-verification-state-machine.md`).
+
 Terminal:
 `CANCELLED`, `REFUNDED`, `DISPUTED`.
 
