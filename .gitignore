@@ -1,1 +1,33 @@
 .DS_Store
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# miniprogram
+miniprogram_npm/
+apps/miniprogram/miniprogram_npm/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# editors
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
