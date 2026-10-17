@@ -32,6 +32,7 @@ A task is only marked `done` when every acceptance criterion in
 | T022 | Security hardening | done | rate limits (account/IP), secure headers, CORS allowlist, body size limits, field-level responses, private object access verified |
 | T023 | E2E | done | all eight journeys of `specs/14` run against the whole app; `pnpm test:e2e` in CI |
 | T024 | Production readiness | done | backup/restore scripts + a restore drill that runs in CI; readiness probe; structured access logs; alerts, runbook, incident response, release checklist |
+| T025 | Git baseline | done | repository audit + git baseline audit; all T001–T024 work committed (`1d19e70`) and pushed; `.env` untracked, no secret in history; baseline tag `baseline-t024`; grouped commit plan for the remaining scope |
 
 ## T002 — Database foundation
 
@@ -2335,3 +2336,28 @@ database, and the scratch database I used while writing the scripts was dropped.
 - **Redis, object storage and secret rotation** are documented but not automated.
 - **No synthetic monitoring from outside**: the probes are checked from inside the
   network; an external check still has to be added.
+
+## T025 — Git 与工程基线修复
+
+### 交付
+
+- `implementation/launch/repository-audit.md`：仓库结构与可启动性审计（工作区、后端/管理台/小程序、数据库、测试、T001–T024 矩阵、阻塞项）。
+- `implementation/launch/git-baseline-audit.md`：Git 基线审计（status/log/branch、未跟踪与已修改文件、`.gitignore`、敏感文件与密钥扫描、T001–T024 入库核对、分组提交方案）。
+- `implementation/launch/environment.md`：本地启动手册（前置条件、环境变量、后端/管理台/小程序启动步骤、已知构建坑、验证命令、运维脚本）。
+- `implementation/launch/launch-progress.md`：启动进度追踪（三应用状态、阻塞项 B1–B9 现状、提交分组进度、下一步顺序）。
+
+### 基线结论
+
+- T002–T024 的全部工作已进入版本控制：`1d19e70`（438 文件）并推送至 `origin/main`，远端与本地同一 commit；
+  源码磁盘与 Git 完全一致（273/273、28/28、9/9）。
+- `.env` 未被跟踪（`.gitignore:25`），入库的只有 `.env.example` 模板；已跟踪文件中无私钥、无平台令牌、
+  无生产凭据（唯一的 `'<redacted>'` 是 `redactWeChatPayConfig()` 脱敏函数本身）。
+- 无 `node_modules`、`dist`、`.next`、日志入库。
+- 基线打上附注标签 `baseline-t024`（指向 `1d19e70`），作为可回滚锚点。
+
+### 已知偏差
+
+- T002–T024 落在单个提交中、提交信息为 "first commit"，不合 `AGENTS.md` §14 的粒度与格式要求；
+  因 T025 明确禁止改写历史（`reset`/`rebase`/`--force`），保留该提交作为基线，后续提交按任务分组。
+- `implementation/launch/launch-audit.md` 仍为 0 字节（审计产物落到了 `repository-audit.md` 与
+  `git-baseline-audit.md`）；`user.name` 为空（由环境解析为 `张阳`），未改动 git 配置。
