@@ -36,6 +36,53 @@ Read these in order before coding:
 9. `implementation/implementation-plan.md`
 10. `implementation/task-breakdown.md`
 
+## Operations
+
+Running the platform in production (T024):
+
+1. [`ops/README.md`](ops/README.md) — targets (RPO/RTO), scope, non-negotiables
+2. [`ops/backups.md`](ops/backups.md) — backup policy, `ops/backup.sh`, `ops/restore.sh`, the restore drill
+3. [`ops/monitoring.md`](ops/monitoring.md) — health probes, structured logs, metrics
+4. [`ops/alert-rules.yml`](ops/alert-rules.yml) — alert definitions
+5. [`ops/runbook.md`](ops/runbook.md) — procedures for the failures that happen
+6. [`ops/incident-response.md`](ops/incident-response.md) — severity, roles, postmortem
+7. [`ops/release-checklist.md`](ops/release-checklist.md) — the gate before a release ships
+
+```bash
+DATABASE_URL=… PGPASSWORD=… BACKUP_DIR=/var/backups/mentor ops/backup.sh
+ops/restore.sh <dump> <scratch-database-url>
+```
+
+## Database
+
+Prisma + PostgreSQL. Schema: `prisma/schema.prisma`, migrations: `prisma/migrations`.
+
+```bash
+cp .env.example .env            # then set DATABASE_URL / DATABASE_TEST_URL
+pnpm prisma:generate            # generate the client
+pnpm prisma:migrate             # apply migrations (deploy)
+pnpm prisma:seed                # feature flags, admin/test users, taxonomy
+pnpm prisma:migrate:dev         # create a new migration after a schema change
+```
+
+Integration tests use a **disposable** database (`DATABASE_TEST_URL`); the suite
+resets it from the committed migrations before running:
+
+```bash
+pnpm test:integration
+```
+
+## Auth
+
+`POST /api/v1/auth/wechat/login` exchanges a `wx.login()` code, creating the
+account on first login. Access tokens are short-lived JWTs; refresh tokens are
+opaque, stored only as hashes and rotated on every use.
+
+```bash
+AUTH_PROVIDER=mock   # local/test only — the mock adapter refuses to run in production
+AUTH_PROVIDER=wechat # real code2Session (needs WECHAT_APP_ID / WECHAT_APP_SECRET)
+```
+
 ## Non-negotiable engineering rules
 
 - Spec is the source of truth.

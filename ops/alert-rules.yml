@@ -1,0 +1,189 @@
+# Alert rules — Mentor Platform (T024)
+#
+# Prometheus/Alertmanager rule format. Adapt the expressions to the metrics your
+# collector exposes; the intent, thresholds and routing are the contract.
+#
+# Rule of thumb for severity:
+#   critical — users cannot buy, or money is at risk      -> page now
+#   warning  — degradation, or a queue that will bite      -> wake up in hours
+#   info     — someone should look during business hours   -> ticket
+
+groups:
+  - name: availability
+    rules:
+      - alert: ApiDown
+        expr: up{job="mentor-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'API instance {{ $labels.instance }} is down'
+          runbook: ops/runbook.md#api-down
+
+      - alert: DatabaseUnreachable
+        expr: probe_readiness_database_up{job="mentor-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'API reports the database as unreachable'
+          runbook: ops/runbook.md#database-unreachable
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="mentor-api",status=~"5.."}[5m]))
+            / sum(rate(http_requests_total{job="mentor-api"}[5m])) > 0.02
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: '5xx ratio above 2% for five minutes'
+          runbook: ops/runbook.md#high-error-rate
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="mentor-api"}[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'p95 latency above 1s for ten minutes'
+          runbook: ops/runbook.md#high-latency
+
+  - name: money
+    rules:
+      - alert: PaymentCallbackFailures
+        expr: increase(payment_callback_total{result="failed"}[15m]) > 5
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Payment callbacks are failing: orders stay unpaid'
+          runbook: ops/runbook.md#payment-callbacks-failing
+
+      - alert: NoSuccessfulPayments
+        expr: increase(payment_callback_total{result="succeeded"}[1h]) == 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'No successful payment in an hour — traffic drop or gateway problem'
+          runbook: ops/runbook.md#payment-callbacks-failing
+
+      - alert: RefundFailures
+        expr: increase(refund_total{result!="SUCCEEDED"}[1h]) > 3
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Refunds are failing: money the customer is owed is stuck'
+          runbook: ops/runbook.md#refund-stuck
+
+      - alert: StuckRefundBranch
+        expr: orders_in_status{status="REFUND_PENDING"} > 0
+        for: 6h
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Orders sitting in REFUND_PENDING for more than six hours'
+          runbook: ops/runbook.md#refund-stuck
+
+  - name: database
+    rules:
+      - alert: DatabaseSlowQueries
+        expr: pg_stat_statements_mean_time_seconds > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Mean query time above 1s'
+          runbook: ops/runbook.md#database-slow
+
+      - alert: DatabaseConnectionsHigh
+        expr: pg_stat_activity_count / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Database connection pool above 80%'
+          runbook: ops/runbook.md#database-connections-exhausted
+
+  - name: backups
+    rules:
+      - alert: BackupTooOld
+        # Alert on the age of the newest dump: a scheduler that stopped produces
+        # no failure to alert on.
+        expr: time() - backup_last_success_timestamp_seconds > 7200
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Newest backup is older than two hours (RPO at risk)'
+          runbook: ops/runbook.md#backup-missing
+
+      - alert: BackupFailed
+        expr: increase(backup_runs_total{result="failed"}[1h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'A backup run failed'
+          runbook: ops/runbook.md#backup-missing
+
+      - alert: RestoreDrillSkipped
+        expr: restore_drill_runs_total{result="skipped"} > 1
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'The restore drill was skipped: the backup is unverified'
+          runbook: ops/runbook.md#restore-drill-skipped
+
+  - name: trust_and_safety
+    rules:
+      - alert: ModerationBacklog
+        expr: moderation_cases_open{} > 50
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: 'More than fifty open moderation cases'
+          runbook: ops/runbook.md#moderation-backlog
+
+      - alert: AgedModerationCase
+        expr: moderation_case_age_seconds{} > 172800
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'A moderation case has been open for more than two days'
+          runbook: ops/runbook.md#moderation-backlog
+
+      - alert: VerificationBacklog
+        expr: verification_cases_submitted{} > 100
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Verification queue is not being worked'
+          runbook: ops/runbook.md#verification-backlog
+
+  - name: abuse
+    rules:
+      - alert: RateLimitRejectionsSpike
+        expr: |
+          sum(rate(http_requests_total{job="mentor-api",status="429"}[10m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Rate limiting is rejecting requests: abuse or a broken client'
+          runbook: ops/runbook.md#rate-limit-spike
+
+      - alert: LoginFailuresSpike
+        expr: increase(auth_login_total{result="failed"}[10m]) > 100
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Login failures spiked: credential stuffing'
+          runbook: ops/runbook.md#credential-stuffing

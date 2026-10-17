@@ -120,6 +120,7 @@ Do not store child phone, exact home address or unnecessary identity data.
 - status
 - verification_level
 - compliance_status
+- restriction_json jsonb nullable (scope of a `RESTRICTED` compliance decision: category/time/location; see `specs/06-verification-state-machine.md` §Teacher compliance)
 - created_at
 - updated_at
 
@@ -181,6 +182,12 @@ PK `(service_id, term_id)`
 - end_at
 - recurrence_rule nullable
 - status
+
+Slots of one provider never overlap. The application checks the window before
+inserting, and the database enforces it with an exclusion constraint
+(`availability_slots_no_overlap`, GiST over `provider_id` and
+`tsrange(start_at, end_at, '[)')`), because a booking consumes a whole slot:
+overlapping slots would allow overlapping confirmed bookings.
 
 ### orders
 - id

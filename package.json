@@ -14,19 +14,30 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "pnpm -r test",
+    "test:integration": "pnpm -r --if-present test:integration",
+    "test:e2e": "pnpm -r --if-present test:e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
-    "verify": "pnpm lint && pnpm build && pnpm typecheck && pnpm test"
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:seed": "prisma db seed",
+    "prisma:reset": "prisma migrate reset --force",
+    "verify": "pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm test:integration && pnpm test:e2e"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@prisma/client": "^5.22.0",
     "@types/node": "^22.10.0",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.4.0",
     "prisma": "^5.22.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.15.0"
   }

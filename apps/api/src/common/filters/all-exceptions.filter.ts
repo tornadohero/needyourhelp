@@ -41,6 +41,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     response.setHeader(REQUEST_ID_HEADER, requestId);
 
+    // Input size limit (`specs/13-security-spec.md` §API). The body parser is
+    // what stops an oversized request, and it does so with an error that is not
+    // an `HttpException`: answered here so the caller gets the envelope.
+    if (this.isPayloadTooLarge(exception)) {
+      response
+        .status(413)
+        .json(errorEnvelope(ERROR_CODES.VALIDATION_ERROR, 'Request body is too large.', requestId));
+      return;
+    }
+
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const payload = exception.getResponse() as HttpExceptionPayload | string;
@@ -57,6 +67,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     response
       .status(HttpStatus.INTERNAL_SERVER_ERROR)
       .json(errorEnvelope(INTERNAL_ERROR_CODE, 'Internal server error.', requestId));
+  }
+
+  private isPayloadTooLarge(exception: unknown): boolean {
+    const candidate = exception as { type?: unknown; status?: unknown } | null;
+    return candidate?.type === 'entity.too.large' || candidate?.status === 413;
   }
 
   private toMessage(message: string | string[] | undefined): string | undefined {

@@ -13,6 +13,35 @@ jobs:
   verify:
     name: lint / build / typecheck / test
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mentor_platform_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # The CI PostgreSQL service only exposes `mentor_platform_test`, so the
+      # migration/seed checks run against that database too. The integration
+      # suite resets it before running.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mentor_platform_test?schema=public
+      DATABASE_TEST_URL: postgresql://postgres:postgres@localhost:5432/mentor_platform_test?schema=public
+      # Auth (T003): mock provider, dev-only secrets. Real secrets never enter CI.
+      AUTH_PROVIDER: mock
+      NODE_ENV: test
+      ACCESS_TOKEN_SECRET: ci-only-access-secret
+      REFRESH_TOKEN_SECRET: ci-only-refresh-secret
+      OPENID_HASH_PEPPER: ci-only-openid-pepper
+
     steps:
       - uses: actions/checkout@v4
 
@@ -34,6 +63,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Generate Prisma client
+        run: pnpm prisma:generate
+
       - name: Build
         run: pnpm build
 
@@ -42,3 +74,26 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Migration (fresh database)
+        run: pnpm prisma:migrate
+
+      - name: Seed
+        run: pnpm prisma:seed
+
+      # The restore drill (T024) dumps and restores for real: it needs a client
+      # at least as new as the server, or it skips instead of lying.
+      - name: PostgreSQL client for the restore drill
+        run: |
+          major=$(pg_dump --version 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo 0)
+          if [ "$major" -lt 16 ]; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client-16
+          fi
+          pg_dump --version
+
+      - name: Database integration tests
+        run: pnpm test:integration
+
+      - name: End-to-end critical flows (specs/14)
+        run: pnpm test:e2e

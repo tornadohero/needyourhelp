@@ -19,5 +19,8 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./test/setup.ts'],
     include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'],
+    // Database-backed tests live in `test/integration` and run through
+    // `vitest.integration.config.ts` (they need a disposable PostgreSQL).
+    exclude: ['**/node_modules/**', '**/dist/**', 'test/integration/**', 'test/e2e/**'],
   },
 });
