@@ -1,8 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { AuditModule } from '../audit/audit.module';
 import { IdentityModule } from '../identity/identity.module';
 
+import { ConsoleCredentialService } from './domain/console-credential.service';
+import { CONSOLE_CREDENTIAL_REPOSITORY } from './domain/console-credential.repository';
+import { CONSOLE_PASSWORD_HASHER } from './domain/password-hasher';
+import { ScryptPasswordHasher } from './domain/password-hasher';
 import { DEFAULT_ROLE } from './domain/auth-session.model';
 import type { AuthServiceConfig } from './domain/auth.service';
 import { AUTH_CONFIG, AUTH_SERVICE, AuthService } from './domain/auth.service';
@@ -12,9 +17,11 @@ import { WECHAT_AUTH_PROVIDER } from './domain/wechat-auth.provider';
 import type { WeChatAuthProvider } from './domain/wechat-auth.provider';
 import { JwtAccessTokenService } from './infrastructure/jwt-access-token.service';
 import { MockWeChatAuthProvider } from './infrastructure/mock-wechat-auth.provider';
+import { PrismaConsoleCredentialRepository } from './infrastructure/prisma-console-credential.repository';
 import { PrismaSessionRepository } from './infrastructure/prisma-session.repository';
 import { WeChatHttpAuthProvider } from './infrastructure/wechat-http-auth.provider';
 import { AuthController } from './http/auth.controller';
+import { ConsoleAuthController } from './http/console-auth.controller';
 import { JwtAuthGuard } from './http/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from './http/guards/optional-jwt-auth.guard';
 import { RolesGuard } from './http/guards/roles.guard';
@@ -32,10 +39,14 @@ const DEV_OPENID_PEPPER = 'dev-only-openid-pepper';
  *   mock adapter, which refuses to run in production.
  */
 @Module({
-  imports: [IdentityModule],
-  controllers: [AuthController],
+  // Audit: issuing an operator credential is a privileged mutation.
+  imports: [IdentityModule, AuditModule],
+  controllers: [AuthController, ConsoleAuthController],
   providers: [
     AuthService,
+    ConsoleCredentialService,
+    { provide: CONSOLE_CREDENTIAL_REPOSITORY, useClass: PrismaConsoleCredentialRepository },
+    { provide: CONSOLE_PASSWORD_HASHER, useClass: ScryptPasswordHasher },
     { provide: AUTH_SERVICE, useExisting: AuthService },
     JwtAuthGuard,
     OptionalJwtAuthGuard,
@@ -98,7 +109,7 @@ const DEV_OPENID_PEPPER = 'dev-only-openid-pepper';
       inject: [ConfigService],
     },
   ],
-  exports: [AUTH_SERVICE, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard],
+  exports: [AUTH_SERVICE, ConsoleCredentialService, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}
 

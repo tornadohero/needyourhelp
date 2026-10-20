@@ -50,6 +50,9 @@ export const AUDIT_ACTIONS = {
   moderationCaseTransitioned: 'MODERATION_CASE_TRANSITIONED',
   moderationAppealFiled: 'MODERATION_APPEAL_FILED',
   moderationAppealFinalized: 'MODERATION_APPEAL_FINALIZED',
+  /** Admin console credentials (T028 gap G1): issuing one is power. */
+  consoleCredentialIssued: 'CONSOLE_CREDENTIAL_ISSUED',
+  consoleCredentialRevoked: 'CONSOLE_CREDENTIAL_REVOKED',
   /** Taxonomy (platform configuration) mutations (`specs/05-api-spec.md`). */
   taxonomyCreated: 'TAXONOMY_CREATED',
   taxonomyUpdated: 'TAXONOMY_UPDATED',

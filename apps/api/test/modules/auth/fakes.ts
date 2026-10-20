@@ -20,6 +20,12 @@ import type {
 } from '../../../src/modules/auth/domain/wechat-auth.provider';
 import { MockProviderNotAllowedError } from '../../../src/modules/auth/domain/auth-errors';
 import { randomSecret } from '../../../src/common/security/hash';
+import type {
+  ConsoleCredentialRecord,
+  ConsoleCredentialRepository,
+} from '../../../src/modules/auth/domain/console-credential.repository';
+import type { ConsolePasswordHasher } from '../../../src/modules/auth/domain/password-hasher';
+import { constantTimeEqual, sha256Hex } from '../../../src/common/security/hash';
 
 let sequence = 0;
 
@@ -269,5 +275,106 @@ export class FakeWeChatAuthProvider implements WeChatAuthProvider {
   /** Test helper: mint a raw refresh token the way the service does. */
   static refreshToken(): string {
     return randomSecret();
+  }
+}
+
+/**
+ * In-memory {@link ConsoleCredentialRepository} (T028 gap G1).
+ *
+ * Mirrors the real adapter: one credential per account, failures counted, a lock
+ * that can be stored and cleared.
+ */
+export class FakeConsoleCredentialRepository implements ConsoleCredentialRepository {
+  readonly credentials = new Map<string, ConsoleCredentialRecord>();
+  private sequence = 0;
+
+  async findByUsername(username: string): Promise<ConsoleCredentialRecord | null> {
+    return (
+      [...this.credentials.values()].find((row) => row.username === username.toLowerCase()) ?? null
+    );
+  }
+
+  async findByUserId(userId: string): Promise<ConsoleCredentialRecord | null> {
+    return [...this.credentials.values()].find((row) => row.userId === userId) ?? null;
+  }
+
+  async upsert(input: {
+    userId: string;
+    username: string;
+    passwordHash: string;
+  }): Promise<ConsoleCredentialRecord> {
+    const existing = await this.findByUserId(input.userId);
+    const record: ConsoleCredentialRecord = existing
+      ? { ...existing, username: input.username.toLowerCase(), passwordHash: input.passwordHash }
+      : {
+          id: `console-${++this.sequence}`,
+          userId: input.userId,
+          username: input.username.toLowerCase(),
+          passwordHash: input.passwordHash,
+          failedAttempts: 0,
+          lockedUntil: null,
+          lastUsedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+    this.credentials.set(record.id, record);
+    return record;
+  }
+
+  async deleteByUserId(userId: string): Promise<void> {
+    const existing = await this.findByUserId(userId);
+    if (existing) {
+      this.credentials.delete(existing.id);
+    }
+  }
+
+  async recordFailure(input: {
+    id: string;
+    failedAttempts: number;
+    lockedUntil: Date | null;
+  }): Promise<ConsoleCredentialRecord> {
+    const current = this.credentials.get(input.id);
+    if (!current) {
+      throw new Error(`unknown credential ${input.id}`);
+    }
+    const updated: ConsoleCredentialRecord = {
+      ...current,
+      failedAttempts: input.failedAttempts,
+      lockedUntil: input.lockedUntil,
+      updatedAt: new Date(),
+    };
+    this.credentials.set(input.id, updated);
+    return updated;
+  }
+
+  async recordSuccess(id: string): Promise<ConsoleCredentialRecord> {
+    const current = this.credentials.get(id);
+    if (!current) {
+      throw new Error(`unknown credential ${id}`);
+    }
+    const updated: ConsoleCredentialRecord = {
+      ...current,
+      failedAttempts: 0,
+      lockedUntil: null,
+      lastUsedAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.credentials.set(id, updated);
+    return updated;
+  }
+}
+
+/**
+ * Test-only hasher with the same contract as {@link ScryptPasswordHasher} but
+ * without the cost: unit tests must stay fast, and the hashing *policy* is what
+ * the service tests, not the KDF.
+ */
+export class FastPasswordHasher implements ConsolePasswordHasher {
+  async hash(password: string): Promise<string> {
+    return `test$${sha256Hex(password)}`;
+  }
+
+  async verify(password: string, encoded: string): Promise<boolean> {
+    return constantTimeEqual(encoded, `test$${sha256Hex(password)}`);
   }
 }

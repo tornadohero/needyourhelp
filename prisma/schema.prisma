@@ -408,9 +408,34 @@ model User {
   reviewedVerificationCases VerificationCase[]   @relation("VerificationReviewer")
   assignedModerationCases   ModerationCase[]     @relation("ModerationAssignee")
   appealReviewedCases       ModerationCase[]     @relation("ModerationAppealReviewer")
+  consoleCredentials       ConsoleCredential[]
 
   @@index([status])
   @@map("users")
+}
+
+/// `console_credentials`. Username/password login for the **admin web only**
+/// (T028 gap G1): the mini program keeps using WeChat login.
+///
+/// Rules: the credential can only exist for an account that already holds
+/// `ADMIN` or `OPS`; the password is stored as a salted `scrypt` derivation and
+/// compared in constant time; failed attempts are counted and lock the
+/// credential (`specs/13-security-spec.md` §Auth).
+model ConsoleCredential {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  username       String    @unique
+  passwordHash   String    @map("password_hash")
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  lockedUntil    DateTime? @map("locked_until")
+  lastUsedAt     DateTime? @map("last_used_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("console_credentials")
 }
 
 /// `user_roles`. A user may hold multiple roles (`specs/01-business-rules.md`).

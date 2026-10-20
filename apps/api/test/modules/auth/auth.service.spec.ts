@@ -7,9 +7,11 @@ import { MockProviderNotAllowedError } from '../../../src/modules/auth/domain/au
 import { hmacHex } from '../../../src/common/security/hash';
 import {
   FakeAccessTokenService,
+  FakeConsoleCredentialRepository,
   FakeSessionRepository,
   FakeUserRepository,
   FakeWeChatAuthProvider,
+  FastPasswordHasher,
 } from './fakes';
 
 const PEPPER = 'unit-test-pepper';
@@ -25,8 +27,18 @@ function build(wechat = new FakeWeChatAuthProvider()) {
   const users = new FakeUserRepository();
   const sessions = new FakeSessionRepository();
   const accessTokens = new FakeAccessTokenService();
-  const service = new AuthService(users, sessions, accessTokens, wechat, config);
-  return { service, users, sessions, accessTokens };
+  const credentials = new FakeConsoleCredentialRepository();
+  const passwords = new FastPasswordHasher();
+  const service = new AuthService(
+    users,
+    sessions,
+    accessTokens,
+    wechat,
+    config,
+    credentials,
+    passwords,
+  );
+  return { service, users, sessions, accessTokens, credentials, passwords };
 }
 
 describe('AuthService', () => {

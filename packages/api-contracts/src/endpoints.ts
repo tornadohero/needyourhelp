@@ -9,6 +9,9 @@ export const REQUEST_ID_HEADER = 'X-Request-Id' as const;
 
 export const ENDPOINTS = {
   health: '/health',
+  consoleLogin: '/auth/console/login',
+  adminConsoleCredentials: '/admin/console-credentials',
+  conversationMessages: '/conversations/:id/messages',
   healthReady: '/health/ready',
   auth: {
     wechatLogin: '/auth/wechat/login',

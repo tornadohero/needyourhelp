@@ -6,6 +6,8 @@ import type { AuthServiceConfig } from '../../src/modules/auth/domain/auth.servi
 import { AuthService } from '../../src/modules/auth/domain/auth.service';
 import { JwtAccessTokenService } from '../../src/modules/auth/infrastructure/jwt-access-token.service';
 import { MockWeChatAuthProvider } from '../../src/modules/auth/infrastructure/mock-wechat-auth.provider';
+import { PrismaConsoleCredentialRepository } from '../../src/modules/auth/infrastructure/prisma-console-credential.repository';
+import { ScryptPasswordHasher } from '../../src/modules/auth/domain/password-hasher';
 import { PrismaSessionRepository } from '../../src/modules/auth/infrastructure/prisma-session.repository';
 import { PrismaUserRepository } from '../../src/modules/identity/infrastructure/prisma-user.repository';
 import { createTestPrismaService, describeWithDatabase } from './helpers/test-database';
@@ -39,6 +41,8 @@ describeWithDatabase('auth sessions (database)', () => {
       }),
       new MockWeChatAuthProvider({ environment: 'test' }),
       config,
+      new PrismaConsoleCredentialRepository(prisma),
+      new ScryptPasswordHasher(),
     );
   });
 

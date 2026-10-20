@@ -14,9 +14,11 @@ import { AuthService } from '../../../src/modules/auth/domain/auth.service';
 import type { ApiRole } from '@mentor/api-contracts';
 import {
   FakeAccessTokenService,
+  FakeConsoleCredentialRepository,
   FakeSessionRepository,
   FakeUserRepository,
   FakeWeChatAuthProvider,
+  FastPasswordHasher,
 } from './fakes';
 
 const config = {
@@ -33,6 +35,8 @@ function buildService(): AuthService {
     new FakeAccessTokenService(),
     new FakeWeChatAuthProvider(),
     config,
+    new FakeConsoleCredentialRepository(),
+    new FastPasswordHasher(),
   );
 }
 

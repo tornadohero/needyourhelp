@@ -14,6 +14,11 @@ import {
   MockProviderNotAllowedError,
   WeChatProviderUnavailableError,
 } from './auth-errors';
+import type { ConsoleCredentialRepository } from './console-credential.repository';
+import { CONSOLE_CREDENTIAL_REPOSITORY } from './console-credential.repository';
+import { CONSOLE_ROLES, hasAnyRole, isLocked, lockoutFor } from './console-credential-policy';
+import type { ConsolePasswordHasher } from './password-hasher';
+import { CONSOLE_PASSWORD_HASHER } from './password-hasher';
 import type { AuthPrincipal, IssuedSession } from './auth-session.model';
 import { DEFAULT_ROLE, SESSION_REVOKED_REASON } from './auth-session.model';
 import type { SessionRepository } from './session.repository';
@@ -40,6 +45,19 @@ export interface LoginInput {
   deviceLabel?: string | null;
   ipHash?: string | null;
   userAgentHash?: string | null;
+}
+
+/** Everything a session needs to know about the caller, whatever the login path. */
+export interface SessionContext {
+  deviceLabel?: string | null;
+  ipHash?: string | null;
+  userAgentHash?: string | null;
+}
+
+/** `POST /auth/console/login` (T028 gap G1: the admin web). */
+export interface ConsoleLoginInput extends SessionContext {
+  username: string;
+  password: string;
 }
 
 export interface RefreshInput {
@@ -72,7 +90,67 @@ export class AuthService {
     @Inject(ACCESS_TOKEN_SERVICE) private readonly accessTokens: AccessTokenService,
     @Inject(WECHAT_AUTH_PROVIDER) private readonly wechat: WeChatAuthProvider,
     @Inject(AUTH_CONFIG) private readonly config: AuthServiceConfig,
+    @Inject(CONSOLE_CREDENTIAL_REPOSITORY)
+    private readonly consoleCredentials: ConsoleCredentialRepository,
+    @Inject(CONSOLE_PASSWORD_HASHER) private readonly passwords: ConsolePasswordHasher,
   ) {}
+
+  /**
+   * `POST /auth/console/login`: username/password for the **admin web**
+   * (T028 gap G1).
+   *
+   * The credential only proves an operator identity — it never grants one: the
+   * account must already hold `ADMIN` or `OPS`, checked server-side. A wrong
+   * password, a missing credential and a non-operator account all answer with
+   * the same "not valid" so the endpoint cannot be used to enumerate operators.
+   */
+  async loginWithConsoleCredential(input: ConsoleLoginInput): Promise<{
+    session: IssuedSession;
+    user: { id: string; displayName: string; avatarUrl: string | null; roles: ApiRole[] };
+  }> {
+    const credential = await this.consoleCredentials.findByUsername(
+      input.username.trim().toLowerCase(),
+    );
+
+    if (!credential) {
+      throw invalidCredentials('Console credentials are not valid.');
+    }
+    if (isLocked(credential.lockedUntil)) {
+      throw authForbidden('This console credential is temporarily locked.');
+    }
+
+    const valid = await this.passwords.verify(input.password, credential.passwordHash);
+    if (!valid) {
+      const failedAttempts = credential.failedAttempts + 1;
+      const lockedUntil = lockoutFor(failedAttempts);
+      await this.consoleCredentials.recordFailure({
+        id: credential.id,
+        failedAttempts,
+        lockedUntil,
+      });
+      throw invalidCredentials('Console credentials are not valid.');
+    }
+
+    const user = await this.users.findById(credential.userId);
+    if (!user) {
+      throw invalidCredentials('Console credentials are not valid.');
+    }
+    this.assertUsable(user.status, user.deletedAt);
+
+    const roles = await this.users.listRoles(user.id);
+    // Login never grants power: an operator who lost the role loses the console.
+    if (!hasAnyRole(roles, CONSOLE_ROLES)) {
+      throw authForbidden('This account may not use the admin console.');
+    }
+
+    const session = await this.issueSession(user.id, input);
+    await this.consoleCredentials.recordSuccess(credential.id);
+
+    return {
+      session,
+      user: { id: user.id, displayName: user.displayName, avatarUrl: user.avatarUrl, roles },
+    };
+  }
 
   /** `POST /auth/wechat/login`. */
   async loginWithWeChatCode(input: LoginInput): Promise<{
@@ -266,7 +344,7 @@ export class AuthService {
     }
   }
 
-  private async issueSession(userId: string, input: LoginInput): Promise<IssuedSession> {
+  private async issueSession(userId: string, input: SessionContext): Promise<IssuedSession> {
     const refreshToken = randomSecret();
     const session = await this.sessions.create({
       userId,

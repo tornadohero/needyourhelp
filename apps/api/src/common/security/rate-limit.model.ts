@@ -44,12 +44,19 @@ export const RATE_LIMIT_POLICIES = {
   'auth.login': { limit: 10, windowSeconds: 60, scope: 'ip' },
   /** Expensive read that any anonymous caller can trigger. */
   'search.public': { limit: 120, windowSeconds: 60, scope: 'ip' },
+  /**
+   * The admin console is a password: brute force here is worth the most.
+   * (Account-side counting is on top of this, in the credential lockout.)
+   */
+  'auth.console': { limit: 5, windowSeconds: 60, scope: 'ip' },
   /** A provider application starts an identity review: keep it rare. */
   'applications.create': { limit: 5, windowSeconds: 3_600, scope: 'account' },
   /** Each payment session is a gateway call and an order attempt. */
   'payments.session': { limit: 20, windowSeconds: 3_600, scope: 'account' },
   /** Reviews move a provider's reputation. */
   'reviews.create': { limit: 10, windowSeconds: 86_400, scope: 'account' },
+  /** Messages are the abuse vector inside a conversation (`specs/09`). */
+  'messages.send': { limit: 60, windowSeconds: 60, scope: 'account' },
   /** Reports open a moderation case. */
   'reports.create': { limit: 20, windowSeconds: 86_400, scope: 'account' },
   /** Conversations are the message-abuse vector of `specs/09`. */

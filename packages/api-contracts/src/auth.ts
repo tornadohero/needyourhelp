@@ -60,3 +60,25 @@ export interface MeResponse {
   status: 'ACTIVE' | 'SUSPENDED';
   roles: ApiRole[];
 }
+
+/**
+ * Admin console credential (T028 gap G1).
+ *
+ * The admin web needs a login that is not `wx.login()`. The credential is issued
+ * by an existing operator to an account that already holds `ADMIN` or `OPS`;
+ * login proves the role, it never grants one.
+ *
+ * The response is an allowlist on purpose: no password, no hash, no failure
+ * counters beyond what an operator needs to see.
+ */
+export interface ConsoleCredentialResponse {
+  userId: string;
+  username: string;
+  /** `true` when issuing replaced an existing credential (a rotation). */
+  rotated: boolean;
+}
+
+export interface ConsoleCredentialRevocationResponse {
+  userId: string;
+  revoked: true;
+}
