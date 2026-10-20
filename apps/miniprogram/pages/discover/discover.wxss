@@ -1,0 +1,81 @@
+.page {
+  padding: 32rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.hint {
+  font-size: 28rpx;
+  color: #8a8a8a;
+}
+
+.state {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+}
+
+.card {
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  border-radius: 16rpx;
+  background: #f6f7f9;
+}
+
+.button {
+  margin-top: 24rpx;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chips,
+.sorts,
+.modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin: 16rpx 0;
+}
+
+.chip {
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  background: #eef0f2;
+  font-size: 24rpx;
+}
+
+.chip-on {
+  background: #d7e6ff;
+  color: #1a73e8;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 32rpx;
+  background: #ffffff;
+  border-top: 1rpx solid #e6e8eb;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin: 16rpx 0;
+}
+
+.input {
+  border: 1rpx solid #d8dade;
+  border-radius: 8rpx;
+  padding: 16rpx;
+  margin-bottom: 16rpx;
+}

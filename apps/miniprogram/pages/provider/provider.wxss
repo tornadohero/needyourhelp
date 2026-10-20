@@ -1,0 +1,46 @@
+.page {
+  padding: 32rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 600;
+}
+
+.hint {
+  font-size: 26rpx;
+  color: #8a8a8a;
+}
+
+.bio {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+}
+
+.card {
+  padding: 24rpx;
+  margin-top: 24rpx;
+  border-radius: 16rpx;
+  background: #f6f7f9;
+}
+
+.section {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.service,
+.slot,
+.review {
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #eceef0;
+}
+
+.state {
+  font-size: 28rpx;
+}
+
+.button {
+  margin-top: 24rpx;
+}

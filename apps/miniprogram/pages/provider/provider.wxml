@@ -1,0 +1,41 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <block wx:elif="{{provider}}">
+    <view class="title">{{provider.name}}</view>
+    <view class="hint">{{provider.cityText}} · {{provider.ratingText}} · {{provider.completedText}}</view>
+    <view wx:if="{{provider.headline}}" class="hint">{{provider.headline}}</view>
+    <view wx:if="{{provider.bio}}" class="bio">{{provider.bio}}</view>
+
+    <view class="card">
+      <view class="section">服务（{{provider.serviceCount}}）</view>
+      <view wx:if="{{provider.serviceCount === 0}}" class="hint">该导师暂无已发布服务。</view>
+      <view class="service" wx:for="{{provider.services}}" wx:key="id">
+        <view>{{item.title}}</view>
+        <!-- Money screen: service, duration and the price the server decided. -->
+        <view class="hint">{{item.durationText}} · {{item.priceText}} · {{item.deliveryText}}</view>
+        <view wx:if="{{item.description}}" class="hint">{{item.description}}</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section">可预约时段</view>
+      <view wx:if="{{slots.length === 0}}" class="hint">暂无可预约时段。</view>
+      <view class="slot" wx:for="{{slots}}" wx:key="id">{{item.rangeText}}</view>
+    </view>
+
+    <view class="card">
+      <view class="section">评价</view>
+      <view wx:if="{{reviews.length === 0}}" class="hint">暂无评价。</view>
+      <view class="review" wx:for="{{reviews}}" wx:key="id">
+        <view class="hint">{{item.ratingText}} · {{item.createdText}}</view>
+        <view wx:if="{{item.content}}">{{item.content}}</view>
+      </view>
+    </view>
+  </block>
+</view>

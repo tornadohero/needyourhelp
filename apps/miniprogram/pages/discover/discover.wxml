@@ -1,0 +1,60 @@
+<view class="page">
+  <view class="head">
+    <view class="title">发现导师</view>
+    <button size="mini" bindtap="onOpenFilter">筛选<text wx:if="{{activeCount > 0}}">（{{activeCount}}）</text></button>
+  </view>
+
+  <view wx:if="{{summary.length > 0}}" class="chips">
+    <text class="chip" wx:for="{{summary}}" wx:key="*this">{{item}}</text>
+  </view>
+
+  <view class="sorts">
+    <text class="chip {{filter.sort === 'relevance' ? 'chip-on' : ''}}" data-sort="relevance" bindtap="onPickSort">综合</text>
+    <text class="chip {{filter.sort === 'rating' ? 'chip-on' : ''}}" data-sort="rating" bindtap="onPickSort">评分</text>
+    <text class="chip {{filter.sort === 'newest' ? 'chip-on' : ''}}" data-sort="newest" bindtap="onPickSort">最新</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:elif="{{empty}}" class="state">没有符合条件的导师，试试放宽筛选。</view>
+
+  <block wx:else>
+    <view class="hint">共 {{total}} 位导师</view>
+    <view class="card" wx:for="{{rows}}" wx:key="id" data-id="{{item.id}}" bindtap="onOpenProvider">
+      <view>{{item.name}}</view>
+      <view class="hint">{{item.cityText}} · {{item.ratingText}} · {{item.completedText}} · {{item.fromPriceText}}</view>
+      <view wx:if="{{item.headline}}" class="hint">{{item.headline}}</view>
+    </view>
+    <view wx:if="{{loadingMore}}" class="state">正在加载更多…</view>
+    <view wx:elif="{{!hasMore}}" class="hint">已经到底了。</view>
+  </block>
+
+  <view wx:if="{{showFilter}}" class="sheet">
+    <view class="section">筛选</view>
+    <input class="input" value="{{draft.city}}" placeholder="城市代码，如 BEIJING" bindinput="onCityInput" />
+    <input class="input" value="{{draft.subject}}" placeholder="科目代码，如 MATH" bindinput="onSubjectInput" />
+    <input class="input" value="{{draft.grade}}" placeholder="年级代码，如 G7" bindinput="onGradeInput" />
+    <input class="input" value="{{draft.minPrice}}" placeholder="最低价（分）" bindinput="onMinPriceInput" />
+    <input class="input" value="{{draft.maxPrice}}" placeholder="最高价（分）" bindinput="onMaxPriceInput" />
+
+    <view class="modes">
+      <text class="chip {{draft.deliveryMode === 'ONLINE' ? 'chip-on' : ''}}" data-mode="ONLINE" bindtap="onPickDelivery">线上</text>
+      <text class="chip {{draft.deliveryMode === 'OFFLINE' ? 'chip-on' : ''}}" data-mode="OFFLINE" bindtap="onPickDelivery">线下</text>
+      <text class="chip {{draft.deliveryMode === 'HYBRID' ? 'chip-on' : ''}}" data-mode="HYBRID" bindtap="onPickDelivery">两者</text>
+    </view>
+
+    <view class="row">
+      <switch checked="{{draft.verifiedOnly}}" bindchange="onToggleVerified" />
+      <text>仅显示已验证</text>
+    </view>
+
+    <button class="button" size="mini" bindtap="onApplyFilter">应用</button>
+    <button class="button" size="mini" bindtap="onResetFilter">重置</button>
+    <button class="button" size="mini" bindtap="onCloseFilter">关闭</button>
+  </view>
+</view>
