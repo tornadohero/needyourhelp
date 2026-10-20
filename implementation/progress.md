@@ -33,6 +33,7 @@ A task is only marked `done` when every acceptance criterion in
 | T023 | E2E | done | all eight journeys of `specs/14` run against the whole app; `pnpm test:e2e` in CI |
 | T024 | Production readiness | done | backup/restore scripts + a restore drill that runs in CI; readiness probe; structured access logs; alerts, runbook, incident response, release checklist |
 | T025 | Git baseline | done | repository audit + git baseline audit; all T001–T024 work committed (`1d19e70`) and pushed; `.env` untracked, no secret in history; baseline tag `baseline-t024`; grouped commit plan for the remaining scope |
+| T026 | Workspace & build | done | install/prisma:generate/build/typecheck/lint all pass; `nest build` no longer bulk-deletes `apps/api/dist` (`deleteOutDir: false`); build verification report |
 
 ## T002 — Database foundation
 
@@ -2361,3 +2362,49 @@ database, and the scratch database I used while writing the scripts was dropped.
   因 T025 明确禁止改写历史（`reset`/`rebase`/`--force`），保留该提交作为基线，后续提交按任务分组。
 - `implementation/launch/launch-audit.md` 仍为 0 字节（审计产物落到了 `repository-audit.md` 与
   `git-baseline-audit.md`）；`user.name` 为空（由环境解析为 `张阳`），未改动 git 配置。
+
+## T026 — Workspace 与 Build 修复
+
+### 检查项
+
+1. `pnpm-workspace.yaml`：`apps/*`、`packages/*`，5 个工作区包全部识别；`.npmrc` 正常。
+2. 各 Workspace `package.json`：脚本齐全；`apps/miniprogram` 的 `build` 仅 `tsc --noEmit`（无产物）。
+3. 包间依赖：`apps/api`、`apps/admin` 依赖 `@mentor/*`（`workspace:*`），无循环；重复声明但无版本冲突。
+4. TypeScript：统一继承 `tsconfig.base.json`；`packages/*` 与 `apps/api` 的 build 配置均设 `rootDir: src` 并排除测试文件。
+5. 构建脚本：根 `pnpm -r build` 按拓扑序执行。
+6. 生成代码前置条件：Prisma Client 必须先生成（CI 中 `prisma:generate` 位于 `build` 之前，顺序正确）。
+7. Prisma Client 生成：`prisma generate` 成功（v5.22.0），pnpm 下产物落在 `.pnpm` 存储路径，CLI 与 Client 版本一致。
+8. 构建产物目录：`apps/api/dist`、`packages/*/dist`、`apps/admin/.next`、`*.tsbuildinfo` 均被 `.gitignore` 覆盖，无同名冲突。
+
+### 失败与修复
+
+- 现象：`pnpm build` 在 `apps/api` 失败 ——
+  `Error [safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED] {"count":1100,"threshold":500,...,"targets":["apps/api/dist"]}`。
+- 定位：`npx tsc -p tsconfig.build.json` 直接编译 **exit 0**，证明源码/依赖/配置无问题；失败来自
+  `nest build` 依据 `apps/api/nest-cli.json` 的 `deleteOutDir: true` 在构建前整体删除 `dist/`。
+- 定性：环境问题（工具链批量删除保护）为主因，仓库配置为触发条件。
+- 修复（最小范围）：`apps/api/nest-cli.json` 的 `deleteOutDir` 改为 `false`。未触碰业务代码、数据库结构与测试。
+
+### 验证结果
+
+| 命令 | 结果 |
+|---|---|
+| `pnpm install --frozen-lockfile` | PASS（`Already up to date`，锁文件一致） |
+| `pnpm prisma:generate` | PASS（Prisma Client v5.22.0） |
+| `pnpm build` | PASS（修复后；`apps/api`、`apps/admin` 均 Done） |
+| `pnpm typecheck` | PASS（6 步全 Done） |
+| `pnpm lint` | PASS |
+| `pnpm format:check` / `pnpm test` | PASS（420 单测） |
+| 构建产物冒烟 | PASS（`/health` 200、`/health/ready` 200 且 `database:"up"`） |
+
+### 修改文件
+
+- `apps/api/nest-cli.json`（`deleteOutDir: true` → `false`）
+- `implementation/launch/build-verification.md`（新增）
+- `implementation/progress.md`（本记录）
+
+### 剩余问题
+
+- `deleteOutDir: false` 后 `dist/` 可能残留旧产物（已忽略，CI 全新检出；需彻底重建时手动删除）。
+- `next build` 存在 "Next.js plugin was not detected in your ESLint configuration" 非阻塞告警。
+- 集成/E2E 未重跑（会重置测试库）；Redis 未接入（T028）；小程序无构建产物（T027）。
