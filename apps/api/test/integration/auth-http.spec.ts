@@ -13,6 +13,12 @@ import { ResponseEnvelopeInterceptor } from '../../src/common/interceptors/respo
 import { sha256Hex } from '../../src/common/security/hash';
 import { ACCESS_TOKEN_SERVICE } from '../../src/modules/auth/domain/access-token.service';
 import { AUTH_CONFIG, AUTH_SERVICE, AuthService } from '../../src/modules/auth/domain/auth.service';
+import { CONSOLE_CREDENTIAL_REPOSITORY } from '../../src/modules/auth/domain/console-credential.repository';
+import {
+  CONSOLE_PASSWORD_HASHER,
+  ScryptPasswordHasher,
+} from '../../src/modules/auth/domain/password-hasher';
+import { PrismaConsoleCredentialRepository } from '../../src/modules/auth/infrastructure/prisma-console-credential.repository';
 import { SESSION_REPOSITORY } from '../../src/modules/auth/domain/session.repository';
 import { WECHAT_AUTH_PROVIDER } from '../../src/modules/auth/domain/wechat-auth.provider';
 import { AuthController } from '../../src/modules/auth/http/auth.controller';
@@ -67,6 +73,8 @@ describeWithDatabase('auth HTTP endpoints', () => {
       providers: [
         { provide: PrismaService, useValue: prisma },
         AuthService,
+        { provide: CONSOLE_CREDENTIAL_REPOSITORY, useClass: PrismaConsoleCredentialRepository },
+        { provide: CONSOLE_PASSWORD_HASHER, useClass: ScryptPasswordHasher },
         { provide: AUTH_SERVICE, useExisting: AuthService },
         JwtAuthGuard,
         RolesGuard,
