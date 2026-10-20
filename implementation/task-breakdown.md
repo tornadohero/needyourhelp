@@ -1,5 +1,7 @@
 # Task Breakdown
 
+Status and delivery evidence for every task live in [`progress.md`](progress.md); the task ids in both files are the same.
+
 ## T001 Repo bootstrap
 Input: README, AGENTS, architecture.
 Output:
@@ -151,6 +153,88 @@ Acceptance:
 - incident response
 - release checklist.
 
+## T025 Git baseline
+Git and engineering baseline: repository audit, git baseline audit, grouped commits, rollback anchor.
+Input: `specs/`, `implementation/progress.md`, `implementation/task-breakdown.md`.
+Output:
+- `implementation/launch/repository-audit.md`
+- `implementation/launch/git-baseline-audit.md`
+- `implementation/launch/environment.md`
+- `implementation/launch/launch-progress.md`
+- annotated tag `baseline-t024`
+Acceptance:
+- every T001-T024 artifact is committed and pushed; working tree clean.
+- `.env` is untracked; no secret, `node_modules`, build output or log in history.
+- source on disk matches git (273/273, 28/28, 9/9).
+
+## T026 Workspace and build
+Install, generate, build, typecheck and lint the whole workspace from a clean state.
+Input: `pnpm-workspace.yaml`, every workspace `package.json`, TypeScript configs, Prisma generator.
+Output:
+- `implementation/launch/build-verification.md`
+- `nest build` no longer bulk-deletes `apps/api/dist` (`deleteOutDir: false`)
+Acceptance:
+- `pnpm install --frozen-lockfile`, `pnpm prisma:generate`, `pnpm build`, `pnpm typecheck`, `pnpm lint` all pass.
+- failures are classified as environment or code, and fixed in the smallest necessary scope.
+
+## T027 API contract audit
+Audit the API contract as the source of truth before any frontend work; do not modify backend code.
+Input: `apps/api` routers, `packages/api-contracts`, `specs/11-pages-and-ui.md`, `specs/12-admin-spec.md`.
+Output:
+- `implementation/frontend/api-contract-map.md`
+- `implementation/frontend/miniprogram-page-map.md`
+- `implementation/frontend/admin-page-map.md`
+- `implementation/frontend/frontend-implementation-plan.md`
+- `implementation/frontend/frontend-task-breakdown.md`
+Acceptance:
+- every route has method, auth, request DTO, response DTO, error codes, the UI page it serves and test evidence.
+- 32 mini program pages and 14 admin pages are mapped to real endpoints.
+- contract gaps are recorded as G1-G15 with the blockers (G1/G3/G4) flagged.
+
+## T027b Backend gap closure G1/G3/G4
+Close the three backend gaps that block frontend work.
+Output:
+- G1 `POST /auth/console/login`, `POST/DELETE /admin/console-credentials` (scrypt + salt, failure counter and lockout, rate limit, audit; login grants no role)
+- G3 `PUT/GET /files/verification/:caseId/:documentId` (signed URL: purpose + key + expiry, content type whitelist, size limit)
+- G4 `POST/GET /conversations/:id/messages` (membership, open conversation, block checks in both directions)
+Acceptance:
+- unit 425 / integration 280 over 46 files / E2E 8 all pass.
+- no business refactor, no state machine change, no auth weakening.
+
+## T028 Mini program init
+Engineering foundation of the WeChat mini program; no business page yet.
+Input: `implementation/frontend/api-contract-map.md`, `implementation/frontend/miniprogram-page-map.md`.
+Output:
+- 5-tab shell (home / discover / orders / messages / me), T001 placeholder page removed
+- `src/core/{env,routes,envelope,errors,http,session,format}.ts`
+- `src/config.ts`, `src/app-context.ts`, `src/platform/wechat.ts`, `src/services/auth.ts`
+- contract drift guard (a page may not use an endpoint missing from the contract map)
+- unit tests (38)
+Acceptance:
+- unit tests pass; no secret in the client; no invented endpoint; no mock replacing a real one.
+
+## T029 Mini program account and auth
+Account, profile and consent pages.
+Input: `specs/11-pages-and-ui.md` (Profile / Settings / Consent), `specs/04-identity-and-profile-spec.md`.
+Output:
+- `src/core/account.ts`, `src/core/consents.ts`, `src/services/profile.ts` (+ tests)
+- `pages/me` (profile view/edit, consent list with grant/revoke, underage and suspended states)
+- unit tests (61)
+Acceptance:
+- `GET`/`PUT /me/profile`, consent list/grant/revoke against the real contract.
+- suspended account shown read-only; no child PII rendered without consent.
+
+## T030 Mini program provider discovery
+Parent-side discovery: search, filter, list, provider and service detail.
+Input: `specs/11-pages-and-ui.md` (Tutor search / Filter sheet / Tutor list / Tutor detail / Service detail), `specs/06-discovery-spec.md`.
+Output:
+- `src/core/{filters,paging,provider-view}.ts`, `src/services/discovery.ts` (+ tests)
+- `pages/discover` (filter sheet, sort, paged load-more), `pages/provider` (services, reviews, slots)
+- unit tests (89)
+Acceptance:
+- `GET /providers` is filtered and paged by the server; the client never re-filters locally.
+- no child or private field appears in the list or detail view.
+
 ## CodeBuddy execution instruction
 
 Execute tasks strictly in order unless a dependency is explicitly satisfied.
@@ -165,4 +249,4 @@ For each task:
 7. Report files changed and acceptance results.
 8. Stop before the next task unless the user asks to continue.
 
-Never generate T001-T024 in one uncontrolled pass.
+Never generate T001-T030 in one uncontrolled pass.
