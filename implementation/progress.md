@@ -1842,6 +1842,30 @@ indexes already exist); no migration was added or modified.
   under full-suite load. The repository now breaks the tie by `id` and the test
   separates the two attempts in time.
 
+## T019 — Admin
+
+### 交付（后端运营接口）
+
+| 区域 | 文件 |
+|---|---|
+| 引导与平台概览 | `src/modules/admin/http/{admin-bootstrap,admin}.controller.ts`（11 个文件） |
+| 平台配置 | `src/modules/platform/http/admin-platform.controller.ts`（12 个文件：bootstrap、特性开关、平台规则、用户、订单、审计日志） |
+| 各域运营接口 | `admin-taxonomy`、`admin-verification`、`admin-compliance`、`admin-provider`、`admin-moderation`、`admin-refund` 控制器 |
+| 控制台登录（T027b 增补） | `src/modules/auth/http/console-auth.controller.ts` |
+
+### 验收口径
+
+- 「MVP 无需直接改库即可运行」：管理员由 `POST /admin/bootstrap` 引导产生并写入审计，不需要手工改库；后续登录走 `POST /auth/console/login`，登录本身不授予角色（角色只能由已持有 ADMIN/OPS 的账号签发）。
+- 运营动作（审核、合规、退款、下架、开关）全部经接口并留审计。
+
+### 已知缺口
+
+- `specs/11` §Admin Web 的运营页面未实现：`apps/admin/app/page.tsx` 仍是 T001 占位页，API client 只有健康检查。为此仓库审计将其记为一等阻塞项 B1，后续管理台任务（FE 侧）承接。
+
+### 测试
+
+- `apps/api/test/integration/admin-operations-http.spec.ts`、`admin-platform-http.spec.ts`（既有记录，本轮未重跑）；控制台登录见 T027b 的新增测试。
+
 ## T020 — Analytics
 
 ### Delivered
