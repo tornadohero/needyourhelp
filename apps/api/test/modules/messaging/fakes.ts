@@ -14,6 +14,8 @@ import type {
   ConversationPage,
   ConversationStatus,
   CreateConversationInput,
+  MessageReference,
+  MessageType,
 } from '../../../src/modules/messaging/domain/conversation.model';
 import type { ConversationRepository } from '../../../src/modules/messaging/domain/conversation.repository';
 import type {
@@ -21,12 +23,16 @@ import type {
   ConversationRef,
   CreateGatewayConversationInput,
   MessagingGateway,
+  GatewayMessage,
+  SendMessageInput,
   SendSystemMessageInput,
+  SentMessage,
 } from '../../../src/modules/messaging/domain/messaging-gateway';
 
 /** In-memory {@link ConversationRepository}. */
 export class FakeConversationRepository implements ConversationRepository {
   readonly conversations = new Map<string, Conversation>();
+  readonly messageReferences: MessageReference[] = [];
 
   async create(input: CreateConversationInput): Promise<Conversation> {
     const now = new Date();
@@ -61,6 +67,34 @@ export class FakeConversationRepository implements ConversationRepository {
       items: matching.slice((options.page - 1) * options.pageSize, options.page * options.pageSize),
       total: matching.length,
     };
+  }
+
+  async addMessageReference(input: {
+    conversationId: string;
+    externalMessageId: string;
+    senderUserId: string;
+    messageType: MessageType;
+  }): Promise<MessageReference> {
+    const reference: MessageReference = {
+      id: `msg-ref-${this.messageReferences.length + 1}`,
+      conversationId: input.conversationId,
+      externalMessageId: input.externalMessageId,
+      senderUserId: input.senderUserId,
+      messageType: input.messageType,
+      moderationStatus: 'PENDING',
+      createdAt: new Date(),
+    };
+    this.messageReferences.push(reference);
+    return reference;
+  }
+
+  async listMessageReferences(
+    conversationId: string,
+    options: { limit: number },
+  ): Promise<MessageReference[]> {
+    return this.messageReferences
+      .filter((reference) => reference.conversationId === conversationId)
+      .slice(-options.limit);
   }
 
   async setStatus(id: string, status: ConversationStatus): Promise<Conversation> {
@@ -197,6 +231,9 @@ export class FakeMessagingGateway implements MessagingGateway {
   readonly conversations: CreateGatewayConversationInput[] = [];
   readonly systemMessages: SendSystemMessageInput[] = [];
   readonly blockedPairs: BlockUserInput[] = [];
+  /** What the platform handed to the transport (T028 gap G4). */
+  readonly sentMessages: SendMessageInput[] = [];
+  readonly mailbox = new Map<string, GatewayMessage[]>();
 
   async createConversation(input: CreateGatewayConversationInput): Promise<ConversationRef> {
     this.conversations.push(input);
@@ -205,6 +242,28 @@ export class FakeMessagingGateway implements MessagingGateway {
 
   async sendSystemMessage(input: SendSystemMessageInput): Promise<void> {
     this.systemMessages.push(input);
+  }
+
+  async sendMessage(input: SendMessageInput): Promise<SentMessage> {
+    this.sentMessages.push(input);
+    const externalMessageId = `fake-msg-${this.sentMessages.length}`;
+    const messages = this.mailbox.get(input.providerConversationId) ?? [];
+    messages.push({
+      externalMessageId,
+      senderUserId: input.senderUserId,
+      messageType: input.messageType,
+      body: input.body,
+      createdAt: new Date().toISOString(),
+    });
+    this.mailbox.set(input.providerConversationId, messages);
+    return { externalMessageId };
+  }
+
+  async listMessages(input: {
+    providerConversationId: string;
+    limit: number;
+  }): Promise<GatewayMessage[]> {
+    return (this.mailbox.get(input.providerConversationId) ?? []).slice(-input.limit);
   }
 
   async blockUser(input: BlockUserInput): Promise<void> {

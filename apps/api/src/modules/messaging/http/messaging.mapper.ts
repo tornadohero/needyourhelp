@@ -4,7 +4,10 @@ import type {
   ConversationMemberResponse,
   ConversationResponse,
   ConversationReportResponse,
+  MessageListResponse,
   MessageReferenceResponse,
+  MessageResponse,
+  MessageTypeName,
   UnblockResponse,
 } from '@mentor/api-contracts';
 
@@ -35,6 +38,35 @@ export function toMessageReferenceResponse(reference: MessageReference): Message
     moderationStatus: reference.moderationStatus,
     createdAt: reference.createdAt.toISOString(),
   };
+}
+
+/**
+ * A message as the client sees it (T028 gap G4): the platform reference plus the
+ * body the transport holds.
+ */
+export function toMessageResponse(message: {
+  id: string;
+  conversationId: string;
+  senderUserId: string;
+  messageType: MessageTypeName;
+  body: string;
+  moderationStatus: string;
+  createdAt: Date | string;
+}): MessageResponse {
+  return {
+    id: message.id,
+    conversationId: message.conversationId,
+    senderUserId: message.senderUserId,
+    messageType: message.messageType,
+    body: message.body,
+    moderationStatus: message.moderationStatus,
+    createdAt:
+      typeof message.createdAt === 'string' ? message.createdAt : message.createdAt.toISOString(),
+  };
+}
+
+export function toMessageListResponse(messages: MessageResponse[]): MessageListResponse {
+  return { items: messages };
 }
 
 export function toConversationResponse(conversation: Conversation): ConversationResponse {

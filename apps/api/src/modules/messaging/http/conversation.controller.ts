@@ -3,6 +3,8 @@ import type {
   ConversationListResponse,
   ConversationReportResponse,
   ConversationResponse,
+  MessageListResponse,
+  MessageResponse,
 } from '@mentor/api-contracts';
 
 import { JwtAuthGuard } from '../../auth/http/guards/jwt-auth.guard';
@@ -13,6 +15,8 @@ import {
   toConversationListResponse,
   toConversationReportResponse,
   toConversationResponse,
+  toMessageListResponse,
+  toMessageResponse,
 } from './messaging.mapper';
 import { translate } from './messaging-error-translator';
 import { RateLimit } from '../../../common/security/rate-limit.interceptor';
@@ -23,7 +27,9 @@ import { RateLimit } from '../../../common/security/rate-limit.interceptor';
 import {
   ConversationListQueryDto,
   CreateConversationDto,
+  MessageListQueryDto,
   ReportConversationDto,
+  SendMessageDto,
 } from './dto/messaging.dto';
 
 /**
@@ -78,6 +84,63 @@ export class ConversationController {
     return translate(async () =>
       toConversationResponse(await this.conversations.getForMember(principal.userId, id)),
     );
+  }
+
+  /** `POST /conversations/:id/messages`: members only, never a blocked pair. */
+  @Post(':id/messages')
+  @RateLimit('messages.send')
+  async sendMessage(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param('id') id: string,
+    @Body() body: SendMessageDto,
+  ): Promise<MessageResponse> {
+    return translate(async () => {
+      // A client never sends a system message: that type is server-side only.
+      const messageType = body.messageType === 'SYSTEM' ? 'TEXT' : (body.messageType ?? 'TEXT');
+
+      const sent = await this.conversations.sendMessage(principal.userId, id, {
+        body: body.body,
+        messageType,
+      });
+
+      return toMessageResponse({
+        id: sent.reference.id,
+        conversationId: sent.reference.conversationId,
+        senderUserId: sent.reference.senderUserId,
+        messageType,
+        body: sent.body,
+        moderationStatus: sent.reference.moderationStatus,
+        createdAt: sent.reference.createdAt,
+      });
+    });
+  }
+
+  /** `GET /conversations/:id/messages`: the thread the transport holds. */
+  @Get(':id/messages')
+  async listMessages(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param('id') id: string,
+    @Query() query: MessageListQueryDto,
+  ): Promise<MessageListResponse> {
+    return translate(async () => {
+      const { items } = await this.conversations.listMessages(principal.userId, id, {
+        limit: query.limit,
+      });
+
+      return toMessageListResponse(
+        items.map((message) =>
+          toMessageResponse({
+            id: message.externalMessageId,
+            conversationId: id,
+            senderUserId: message.senderUserId,
+            messageType: message.messageType,
+            body: message.body,
+            moderationStatus: 'PENDING',
+            createdAt: message.createdAt,
+          }),
+        ),
+      );
+    });
   }
 
   /** `POST /conversations/:id/report`: creates a moderation case. */

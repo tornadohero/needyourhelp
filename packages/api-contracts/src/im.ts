@@ -95,3 +95,29 @@ export interface ConversationReportResponse {
   /** `false` when the target already had an active case. */
   caseCreated: boolean;
 }
+
+/**
+ * `message_refs` plus what the transport holds (T028 gap G4).
+ *
+ * `specs/09-im-spec.md` keeps the platform free of message content: the transport
+ * owns the bytes, the platform owns a reference. A message response therefore
+ * carries the platform reference **and** the body the transport returns, so a
+ * client can render a thread — and nothing here is persisted by the platform
+ * beyond `message_refs`.
+ */
+export interface MessageResponse {
+  id: string;
+  conversationId: string;
+  senderUserId: string;
+  messageType: MessageTypeName;
+  body: string;
+  moderationStatus: string;
+  createdAt: string;
+}
+
+export interface MessageListResponse {
+  items: MessageResponse[];
+}
+
+export const MESSAGE_MODERATION_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+export type MessageModerationStatusName = (typeof MESSAGE_MODERATION_STATUSES)[number];

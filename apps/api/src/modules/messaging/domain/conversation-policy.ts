@@ -61,3 +61,26 @@ export function assertReportDescription(value: string | undefined | null): strin
   }
   return description;
 }
+
+/** A message is short: the transport carries it, the platform never stores it. */
+export const MAX_MESSAGE_BODY_LENGTH = 2_000;
+export const MAX_MESSAGE_PAGE_SIZE = 50;
+
+export function assertMessageBody(body: string): string {
+  const trimmed = typeof body === 'string' ? body.trim() : '';
+  if (trimmed.length === 0) {
+    throw messagingInvalidState('A message cannot be empty.');
+  }
+  if (trimmed.length > MAX_MESSAGE_BODY_LENGTH) {
+    throw messagingInvalidState(`A message is at most ${MAX_MESSAGE_BODY_LENGTH} characters.`);
+  }
+  return trimmed;
+}
+
+export function assertMessageLimit(limit?: number): number {
+  const parsed = Number(limit ?? 20);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw messagingInvalidState('A message page size must be a positive integer.');
+  }
+  return Math.min(parsed, MAX_MESSAGE_PAGE_SIZE);
+}

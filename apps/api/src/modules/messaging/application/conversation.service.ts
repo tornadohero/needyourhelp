@@ -14,6 +14,8 @@ import type { UserRepository } from '../../identity/domain/user.repository';
 import { providerNotFound } from '../../provider/domain/provider.errors';
 import { ACTIVE_MODERATION_STATUSES } from '../../moderation/domain/moderation-policy';
 import {
+  assertMessageBody,
+  assertMessageLimit,
   assertPage,
   assertPageSize,
   assertPeer,
@@ -21,7 +23,12 @@ import {
 } from '../domain/conversation-policy';
 import { CONVERSATION_REPOSITORY } from '../domain/conversation.repository';
 import type { ConversationRepository } from '../domain/conversation.repository';
-import type { Conversation, ConversationMemberRole } from '../domain/conversation.model';
+import type {
+  Conversation,
+  ConversationMemberRole,
+  MessageReference,
+  MessageType,
+} from '../domain/conversation.model';
 import {
   blockedUser,
   conversationForbidden,
@@ -29,7 +36,7 @@ import {
   messagingInvalidState,
 } from '../domain/messaging.errors';
 import { MESSAGING_GATEWAY } from '../domain/messaging-gateway';
-import type { MessagingGateway } from '../domain/messaging-gateway';
+import type { GatewayMessage, MessagingGateway } from '../domain/messaging-gateway';
 import { MODERATION_REPOSITORY } from '../../moderation/domain/moderation.repository';
 import type { ModerationRepository } from '../../moderation/domain/moderation.repository';
 import { BLOCK_REPOSITORY } from '../domain/block.repository';
@@ -187,6 +194,85 @@ export class ConversationService {
       templateCode: input.templateCode,
       params: input.params,
     });
+  }
+
+  /**
+   * `POST /conversations/:id/messages` (T028 gap G4).
+   *
+   * Every gate the spec lists is checked before the transport is asked:
+   * membership, an open conversation, and no block in either direction. The
+   * platform keeps a reference; the content stays with the transport
+   * (`specs/09` §Message policy).
+   */
+  async sendMessage(
+    userId: string,
+    conversationId: string,
+    input: { body: string; messageType?: 'TEXT' | 'IMAGE' },
+  ): Promise<{ reference: MessageReference; body: string; messageType: MessageType }> {
+    const body = assertMessageBody(input.body);
+    const messageType: MessageType = input.messageType ?? 'TEXT';
+
+    const conversation = await this.requireMember(userId, conversationId);
+    if (conversation.status !== 'OPEN') {
+      throw messagingInvalidState(
+        `A conversation in status ${conversation.status} cannot carry messages.`,
+      );
+    }
+    if (!conversation.providerConversationId) {
+      throw messagingInvalidState('This conversation has no transport assigned.');
+    }
+
+    // A block in either direction stops delivery, even inside an open thread.
+    for (const member of conversation.members) {
+      if (member.userId === userId) {
+        continue;
+      }
+      if (await this.blocks.existsBetween(userId, member.userId)) {
+        throw blockedUser();
+      }
+    }
+
+    const sent = await this.gateway.sendMessage({
+      conversationId: conversation.id,
+      providerConversationId: conversation.providerConversationId,
+      senderUserId: userId,
+      messageType,
+      body,
+    });
+
+    const reference = await this.conversations.addMessageReference({
+      conversationId: conversation.id,
+      externalMessageId: sent.externalMessageId,
+      senderUserId: userId,
+      messageType,
+    });
+
+    return {
+      reference,
+      body,
+      messageType: reference.messageType,
+    };
+  }
+
+  /**
+   * `GET /conversations/:id/messages` (T028 gap G4): the thread as the transport
+   * holds it. Members only, always bounded.
+   */
+  async listMessages(
+    userId: string,
+    conversationId: string,
+    options: { limit?: number } = {},
+  ): Promise<{ items: GatewayMessage[] }> {
+    const conversation = await this.requireMember(userId, conversationId);
+    if (!conversation.providerConversationId) {
+      return { items: [] };
+    }
+
+    const items = await this.gateway.listMessages({
+      providerConversationId: conversation.providerConversationId,
+      limit: assertMessageLimit(options.limit),
+    });
+    return { items };
   }
 
   /**

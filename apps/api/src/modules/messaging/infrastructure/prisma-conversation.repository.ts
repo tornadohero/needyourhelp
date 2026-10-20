@@ -8,6 +8,7 @@ import type {
   ConversationStatus,
   CreateConversationInput,
   MessageModerationStatus,
+  MessageReference,
   MessageType,
 } from '../domain/conversation.model';
 import type { ConversationRepository } from '../domain/conversation.repository';
@@ -72,6 +73,55 @@ export class PrismaConversationRepository implements ConversationRepository {
     ]);
 
     return { items: rows.map(mapConversation), total };
+  }
+
+  async addMessageReference(input: {
+    conversationId: string;
+    externalMessageId: string;
+    senderUserId: string;
+    messageType: MessageType;
+  }): Promise<MessageReference> {
+    const row = await this.prisma.messageReference.create({
+      data: {
+        conversationId: input.conversationId,
+        externalMessageId: input.externalMessageId,
+        senderUserId: input.senderUserId,
+        messageType: input.messageType,
+        // Every user message starts unmoderated: moderation is a decision.
+        moderationStatus: 'PENDING',
+      },
+    });
+    return {
+      id: row.id,
+      conversationId: row.conversationId,
+      externalMessageId: row.externalMessageId,
+      senderUserId: row.senderUserId,
+      messageType: row.messageType as MessageType,
+      moderationStatus: row.moderationStatus as MessageModerationStatus,
+      createdAt: row.createdAt,
+    };
+  }
+
+  async listMessageReferences(
+    conversationId: string,
+    options: { limit: number },
+  ): Promise<MessageReference[]> {
+    const rows = await this.prisma.messageReference.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'desc' },
+      take: options.limit,
+    });
+    return rows
+      .map((row) => ({
+        id: row.id,
+        conversationId: row.conversationId,
+        externalMessageId: row.externalMessageId,
+        senderUserId: row.senderUserId,
+        messageType: row.messageType as MessageType,
+        moderationStatus: row.moderationStatus as MessageModerationStatus,
+        createdAt: row.createdAt,
+      }))
+      .reverse();
   }
 
   async setStatus(id: string, status: ConversationStatus): Promise<Conversation> {

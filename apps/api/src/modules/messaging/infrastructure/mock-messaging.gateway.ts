@@ -5,8 +5,11 @@ import type {
   BlockUserInput,
   ConversationRef,
   CreateGatewayConversationInput,
+  GatewayMessage,
   MessagingGateway,
+  SendMessageInput,
   SendSystemMessageInput,
+  SentMessage,
 } from '../domain/messaging-gateway';
 
 /**
@@ -22,6 +25,13 @@ export class MockMessagingGateway implements MessagingGateway {
   readonly conversations: CreateGatewayConversationInput[] = [];
   readonly systemMessages: SendSystemMessageInput[] = [];
   readonly blockedPairs: BlockUserInput[] = [];
+  /**
+   * The mock transport's mailbox, per transport conversation (T028 gap G4).
+   *
+   * This is the *transport's* store, not the platform's: the platform still
+   * persists only `message_refs`.
+   */
+  readonly mailbox = new Map<string, GatewayMessage[]>();
 
   constructor(private readonly options: { environment?: string; baseUrl?: string } = {}) {}
 
@@ -35,6 +45,29 @@ export class MockMessagingGateway implements MessagingGateway {
     this.assertAllowed();
     // Template code + params only: no rendered personal data is ever sent.
     this.systemMessages.push(input);
+  }
+
+  async sendMessage(input: SendMessageInput): Promise<SentMessage> {
+    this.assertAllowed();
+    const externalMessageId = `mock-msg-${randomUUID()}`;
+    const messages = this.mailbox.get(input.providerConversationId) ?? [];
+    messages.push({
+      externalMessageId,
+      senderUserId: input.senderUserId,
+      messageType: input.messageType,
+      body: input.body,
+      createdAt: new Date().toISOString(),
+    });
+    this.mailbox.set(input.providerConversationId, messages);
+    return { externalMessageId };
+  }
+
+  async listMessages(input: {
+    providerConversationId: string;
+    limit: number;
+  }): Promise<GatewayMessage[]> {
+    this.assertAllowed();
+    return (this.mailbox.get(input.providerConversationId) ?? []).slice(-input.limit);
   }
 
   async blockUser(input: BlockUserInput): Promise<void> {

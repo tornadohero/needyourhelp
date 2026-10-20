@@ -3,6 +3,8 @@ import type {
   ConversationPage,
   ConversationStatus,
   CreateConversationInput,
+  MessageReference,
+  MessageType,
 } from './conversation.model';
 
 /** Dependency-injection token for {@link ConversationRepository}. */
@@ -25,4 +27,22 @@ export interface ConversationRepository {
 
   /** Conversations of exactly this pair, for block/unblock. */
   listBetweenUsers(firstUserId: string, secondUserId: string): Promise<Conversation[]>;
+
+  /**
+   * A reference to a message the transport accepted (T028 gap G4).
+   *
+   * No content is stored here — only what a moderation decision needs.
+   */
+  addMessageReference(input: {
+    conversationId: string;
+    externalMessageId: string;
+    senderUserId: string;
+    messageType: MessageType;
+  }): Promise<MessageReference>;
+
+  /** Newest last, bounded: a thread is never read whole. */
+  listMessageReferences(
+    conversationId: string,
+    options: { limit: number },
+  ): Promise<MessageReference[]>;
 }

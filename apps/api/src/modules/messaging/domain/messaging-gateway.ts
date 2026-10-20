@@ -36,6 +36,29 @@ export interface BlockUserInput {
   blockedUserId: string;
 }
 
+/** A user message handed to the transport (T028 gap G4). */
+export interface SendMessageInput {
+  conversationId: string;
+  providerConversationId: string;
+  senderUserId: string;
+  messageType: 'TEXT' | 'IMAGE';
+  body: string;
+}
+
+/** The id the transport assigned: the platform stores only the reference. */
+export interface SentMessage {
+  externalMessageId: string;
+}
+
+/** A message as the transport holds it, for reading a thread back. */
+export interface GatewayMessage {
+  externalMessageId: string;
+  senderUserId: string;
+  messageType: 'TEXT' | 'IMAGE' | 'SYSTEM';
+  body: string;
+  createdAt: string;
+}
+
 /**
  * Messaging transport.
  *
@@ -48,6 +71,18 @@ export interface MessagingGateway {
 
   /** System messages are generated server-side (`specs/09` §System messages). */
   sendSystemMessage(input: SendSystemMessageInput): Promise<void>;
+
+  /**
+   * A user message (T028 gap G4).
+   *
+   * The transport carries the content; the platform keeps only the reference, so
+   * a real IM provider can be swapped in without a message ever living in our
+   * database (`specs/09` §Message policy).
+   */
+  sendMessage(input: SendMessageInput): Promise<SentMessage>;
+
+  /** Reads a thread back from the transport; newest last, always bounded. */
+  listMessages(input: { providerConversationId: string; limit: number }): Promise<GatewayMessage[]>;
 
   blockUser(input: BlockUserInput): Promise<void>;
 }
