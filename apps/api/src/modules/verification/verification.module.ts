@@ -9,6 +9,7 @@ import { ProviderModule } from '../provider/provider.module';
 import { VerificationAdminService } from './application/verification-admin.service';
 import { VerificationService } from './application/verification.service';
 import { DOCUMENT_METADATA_CIPHER } from './domain/document-metadata-cipher';
+import { LOCAL_OBJECT_STORE } from './domain/object-store';
 import { OBJECT_STORAGE_GATEWAY } from './domain/object-storage.gateway';
 import { VERIFICATION_CASE_REPOSITORY } from './domain/verification-case.repository';
 import {
@@ -16,6 +17,7 @@ import {
   VERIFICATION_DOCUMENT_MAX_BYTES,
 } from './domain/verification-document-policy';
 import { AdminVerificationController } from './http/admin-verification.controller';
+import { FilesController } from './http/files.controller';
 import { VerificationController } from './http/verification.controller';
 import {
   AesGcmDocumentMetadataCipher,
@@ -35,7 +37,9 @@ import { AnalyticsModule } from '../analytics/analytics.module';
  */
 @Module({
   imports: [AnalyticsModule, AuthModule, IdentityModule, AuditModule, ProviderModule],
-  controllers: [VerificationController, AdminVerificationController],
+  // `FilesController` is the local half of the signed object URLs: it is only
+  // usable when the storage adapter exposes a local store (T028 gap G3).
+  controllers: [VerificationController, AdminVerificationController, FilesController],
   providers: [
     VerificationService,
     VerificationAdminService,
@@ -67,8 +71,13 @@ import { AnalyticsModule } from '../analytics/analytics.module';
           downloadUrlTtlSeconds: Number(
             config.get<string>('VERIFICATION_DOWNLOAD_URL_TTL') ?? '300',
           ),
+          maxBytes: Number(
+            config.get<string>('VERIFICATION_DOCUMENT_MAX_BYTES') ?? DEFAULT_DOCUMENT_MAX_BYTES,
+          ),
         }),
     },
+    // Same adapter instance: the URL it signs is the URL this store serves.
+    { provide: LOCAL_OBJECT_STORE, useExisting: OBJECT_STORAGE_GATEWAY },
     {
       provide: VERIFICATION_DOCUMENT_MAX_BYTES,
       inject: [ConfigService],

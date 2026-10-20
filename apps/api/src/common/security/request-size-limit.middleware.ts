@@ -17,6 +17,13 @@ export const REQUEST_BODY_MAX_BYTES = 'REQUEST_BODY_MAX_BYTES';
 export const DEFAULT_REQUEST_BODY_MAX_BYTES = 64 * 1_024;
 
 /**
+ * Signed document uploads carry up to `VERIFICATION_DOCUMENT_MAX_BYTES` and are
+ * checked by the object store itself, so the 64 KiB JSON ceiling does not apply
+ * to them (T028 gap G3).
+ */
+export const SIGNED_OBJECT_PATH_MARKER = '/files/';
+
+/**
  * Input size limit (`specs/13-security-spec.md` §API: "input/output size
  * limits").
  *
@@ -28,6 +35,11 @@ export class RequestSizeLimitMiddleware implements NestMiddleware {
   constructor(@Optional() @Inject(REQUEST_BODY_MAX_BYTES) private readonly maxBytes?: number) {}
 
   use(request: Request, response: Response, next: NextFunction): void {
+    if ((request.originalUrl ?? request.url ?? '').includes(SIGNED_OBJECT_PATH_MARKER)) {
+      next();
+      return;
+    }
+
     const limit = this.maxBytes ?? DEFAULT_REQUEST_BODY_MAX_BYTES;
     const declared = Number(request.header('content-length') ?? '0');
 
