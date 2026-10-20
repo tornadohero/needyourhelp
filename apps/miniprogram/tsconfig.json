@@ -8,7 +8,7 @@
     "noEmit": true,
     "declaration": false,
     "declarationMap": false,
-    "types": ["wechat-miniprogram"]
+    "types": ["wechat-miniprogram", "node"]
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "miniprogram_npm"]

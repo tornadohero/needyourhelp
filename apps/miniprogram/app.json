@@ -1,10 +1,45 @@
 {
-  "pages": ["pages/index/index"],
+  "pages": [
+    "pages/home/home",
+    "pages/discover/discover",
+    "pages/messages/messages",
+    "pages/orders/orders",
+    "pages/me/me",
+    "pages/provider/provider"
+  ],
   "window": {
-    "navigationBarTitleText": "Mentor Platform",
+    "navigationBarTitleText": "导师平台",
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",
     "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#8a8a8a",
+    "selectedColor": "#1a73e8",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/discover/discover",
+        "text": "发现"
+      },
+      {
+        "pagePath": "pages/messages/messages",
+        "text": "消息"
+      },
+      {
+        "pagePath": "pages/orders/orders",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/me/me",
+        "text": "我的"
+      }
+    ]
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json"

@@ -1,0 +1,6 @@
+<view class="page">
+  <view class="title">消息</view>
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+  <view wx:elif="{{sessionState === 'needs-login'}}" class="state">登录后查看会话。</view>
+  <view wx:else class="state">暂无会话。</view>
+</view>

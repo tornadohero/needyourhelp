@@ -1,0 +1,20 @@
+<view class="page">
+  <view class="title">导师平台</view>
+
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:elif="{{sessionState === 'needs-login'}}" class="state">
+    正在为你登录；若持续失败，请检查网络后重试。
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:else class="state">
+    <view wx:if="{{user}}">已登录：{{user.displayName}}</view>
+    <view>服务状态：{{database === 'up' ? '正常' : '不可用'}}</view>
+  </view>
+</view>

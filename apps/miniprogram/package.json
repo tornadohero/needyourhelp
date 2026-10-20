@@ -5,10 +5,13 @@
   "scripts": {
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "echo 'miniprogram: no unit tests in T001'"
+    "test": "vitest run"
   },
   "devDependencies": {
+    "@mentor/api-contracts": "workspace:*",
+    "@types/node": "^22.10.0",
     "@types/wechat-miniprogram": "^3.4.10",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.0"
   }
 }
