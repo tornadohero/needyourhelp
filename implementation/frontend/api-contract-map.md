@@ -90,8 +90,8 @@ DTO 与返回类型实际提取，未虚构任何接口。基线与版本：分�
 | POST | `/verification/cases` | JWT | `CreateVerificationCaseDto{verificationType}` | `VerificationCaseResponse`（201） | `VALIDATION_ERROR` | 身份/学历验证入口 | 已实现 | `verification-http.spec.ts` |
 | GET | `/verification/me?providerType=` | JWT | query | `MyVerificationResponse` | `NOT_FOUND` | 验证状态页 | 已实现 | `verification-http.spec.ts` |
 | POST | `/verification/cases/:id/documents/upload-url` | JWT | `RequestUploadUrlDto{documentType,contentType,byteSize,fileHash}` | `VerificationUploadUrlResponse`（201，签名 URL，15 分钟） | `VALIDATION_ERROR`、`NOT_FOUND` | 上传证件 | 已实现（上传目标见 §14） | `verification-http.spec.ts` |
-| PUT | `/files/verification/:caseId/:documentId?expires=&signature=` | **签名 URL**（无会话） | 二进制正文（`image/jpeg|png|webp`、`application/pdf`；≤ `VERIFICATION_DOCUMENT_MAX_BYTES`） | `{key,byteSize,contentType}`（200） | `FORBIDDEN`（签名无效/过期/用途不符）、`VALIDATION_ERROR`(413/415)、`NOT_FOUND` | 上传证件（T028 G3） | 已实现 | `verification-files-http.spec.ts`、`files.controller.spec.ts` |
-| GET | `/files/verification/:caseId/:documentId?expires=&signature=` | **签名 URL** | — | 二进制（`cache-control: no-store`） | 同上 | 查看证件（T028 G3） | 已实现 | 同上 |
+| PUT | `/files/verification/:caseId/:documentId?expires=&signature=` | **签名 URL**（无会话） | 二进制正文（`image/jpeg|png|webp`、`application/pdf`；≤ `VERIFICATION_DOCUMENT_MAX_BYTES`） | `{key,byteSize,contentType}`（200） | `FORBIDDEN`（签名无效/过期/用途不符）、`VALIDATION_ERROR`(413/415)、`NOT_FOUND` | 上传证件（T027b G3） | 已实现 | `verification-files-http.spec.ts`、`files.controller.spec.ts` |
+| GET | `/files/verification/:caseId/:documentId?expires=&signature=` | **签名 URL** | — | 二进制（`cache-control: no-store`） | 同上 | 查看证件（T027b G3） | 已实现 | 同上 |
 | POST | `/verification/cases/:id/submit` | JWT | — | `VerificationCaseResponse`（200） | `NOT_FOUND`、`VALIDATION_ERROR` | 提交验证 | 已实现 | `verification-http.spec.ts` |
 | GET | `/admin/verifications` | ADMIN/OPS | `VerificationQueueQueryDto` | `AdminVerificationQueueResponse` | `FORBIDDEN` | 管理台「商家审核」 | 已实现 | `verification-http.spec.ts` |
 | POST | `/admin/verifications/:id/approve` | ADMIN/OPS | `VerificationDecisionDto{reasonCode,notes?}` | `AdminVerificationCaseResponse`（200） | `VALIDATION_ERROR`、`FORBIDDEN` | 审核通过 | 已实现 | `verification-http.spec.ts` |
@@ -229,7 +229,7 @@ DTO 与返回类型实际提取，未虚构任何接口。基线与版本：分�
 | GET | `/conversations` | JWT | `ConversationListQueryDto` | `ConversationListResponse` | `AUTH_REQUIRED` | 消息列表（Tab 3） | 已实现 | `messaging-http.spec.ts` |
 | GET | `/conversations/:id` | JWT（成员） | — | `ConversationResponse{members,messages:MessageReferenceResponse[]}` | `NOT_FOUND` | 聊天页 | 已实现（发消息见 §15） | `messaging-http.spec.ts` |
 | POST | `/conversations/:id/report` | JWT（成员） | `ReportConversationDto` | `ConversationReportResponse` | `NOT_FOUND`、`VALIDATION_ERROR` | 举报会话 | 已实现 | `messaging-http.spec.ts` |
-| POST | `/conversations/:id/messages` | JWT（成员，会话 OPEN，无屏蔽） | `SendMessageDto{body,messageType?}` | `MessageResponse`（201） | `NOT_FOUND`、`BLOCKED_USER`、`VALIDATION_ERROR`、`RATE_LIMITED` | **聊天发送**（T028 G4） | 已实现 | `messaging-messages-http.spec.ts`、`messages.spec.ts` |
+| POST | `/conversations/:id/messages` | JWT（成员，会话 OPEN，无屏蔽） | `SendMessageDto{body,messageType?}` | `MessageResponse`（201） | `NOT_FOUND`、`BLOCKED_USER`、`VALIDATION_ERROR`、`RATE_LIMITED` | **聊天发送**（T027b G4） | 已实现 | `messaging-messages-http.spec.ts`、`messages.spec.ts` |
 | GET | `/conversations/:id/messages?limit=` | JWT（成员） | `MessageListQueryDto` | `MessageListResponse` | `NOT_FOUND` | 聊天记录 | 已实现 | 同上 |
 
 ## 16. Ops（非业务）
@@ -247,7 +247,7 @@ DTO 与返回类型实际提取，未虚构任何接口。基线与版本：分�
 
 | 类别 | 数量 |
 |---|---|
-| 后端路由总数（扫描所得，T028 后） | **102** |
+| 后端路由总数（扫描所得，T027b 后） | **102** |
 | 其中 ADMIN/OPS 角色路由 | 38 |
 | 其中首位管理员引导（仅 JWT） | 1 |
 | 其中微信支付网关回调 | 1（前端不可调用） |
@@ -259,10 +259,10 @@ DTO 与返回类型实际提取，未虚构任何接口。基线与版本：分�
 
 | # | 缺口 | 影响页面 | 说明 |
 |---|---|---|---|
-| ~~G1~~ | ~~管理台非微信登录~~ | 管理台全部 | **已交付（T028）**：`POST /auth/console/login` + `POST/DELETE /admin/console-credentials`；scrypt 加盐哈希、失败计数与锁定、限流、审计；只对已持有 ADMIN/OPS 的账号生效，登录不授予角色 |
+| ~~G1~~ | ~~管理台非微信登录~~ | 管理台全部 | **已交付（T027b）**：`POST /auth/console/login` + `POST/DELETE /admin/console-credentials`；scrypt 加盐哈希、失败计数与锁定、限流、审计；只对已持有 ADMIN/OPS 的账号生效，登录不授予角色 |
 | G2 | 公开单服务详情 `GET /services/:id` | 小程序「服务详情」 | 现只能用 `GET /providers/:id/services` 列表代替 |
-| ~~G3~~ | ~~对象存储上传/下载路由~~ | 身份/学历验证上传 | **已交付（T028）**：`PUT/GET /files/verification/:caseId/:documentId`，校验签名（用途+key+过期）、类型白名单与大小上限；生产直连 bucket 时不绑定该路由 |
-| ~~G4~~ | ~~会话消息发送/拉取~~ | 小程序「聊天」、导师「聊天」 | **已交付（T028）**：`POST/GET /conversations/:id/messages`；内容仍在传输适配器（平台只存 `message_refs`），成员/开放状态/双向屏蔽均由服务端校验 |
+| ~~G3~~ | ~~对象存储上传/下载路由~~ | 身份/学历验证上传 | **已交付（T027b）**：`PUT/GET /files/verification/:caseId/:documentId`，校验签名（用途+key+过期）、类型白名单与大小上限；生产直连 bucket 时不绑定该路由 |
+| ~~G4~~ | ~~会话消息发送/拉取~~ | 小程序「聊天」、导师「聊天」 | **已交付（T027b）**：`POST/GET /conversations/:id/messages`；内容仍在传输适配器（平台只存 `message_refs`），成员/开放状态/双向屏蔽均由服务端校验 |
 | G5 | 订单时间线/状态历史 | 订单详情、管理台订单 | 只有当前状态，无流转历史 |
 | G6 | 前端事件上报接口 | 首页/漏斗 | 分析事件为服务端埋点（`modules/analytics` 无控制器） |
 | G7 | 结算/收入接口 | 导师「Earnings」 | `specs/08` V1 可延后（`settlements` 表未建） |

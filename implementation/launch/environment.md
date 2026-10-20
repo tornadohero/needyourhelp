@@ -93,13 +93,21 @@ pnpm --filter @mentor/admin dev -- -p 3001    # 默认 3000 会与 API 冲突
 - 后端侧运营**接口**已就绪：`apps/api/src/modules/admin/**`、`platform/**` 等（bootstrap、特性开关、
   平台规则、用户、订单、审计日志），并有集成测试覆盖。
 
-## 4. 打开小程序 `apps/miniprogram`（当前为占位应用）
+## 4. 打开小程序 `apps/miniprogram`（T028 已完成工程初始化）
 
-用微信开发者工具打开 `apps/miniprogram` 目录：
+用微信开发者工具导入 `apps/miniprogram` 目录（微信负责编译与真机预览，本仓库不产出打包文件）：
 
-- `project.config.json` 中 `appid` 为 `touristappid`（游客），**无法调用 `wx.login`**；
-- 只有 `pages/index` 一个占位页，无 API client、无网络请求；
-- `package.json` 无 `dev`/`start`，`build` 只是 `tsc --noEmit`（类型检查，不产出可运行包）。
+```bash
+pnpm --filter @mentor/miniprogram test        # 38 个单元测试（Node）
+pnpm --filter @mentor/miniprogram typecheck   # tsc --noEmit
+```
+
+- 启动后端后，`src/config.ts` 保持 `env: 'develop'` 即指向 `http://localhost:3000`；
+  体验版/正式版必须配置 `apiOrigin` 且为 HTTPS。
+- 已完成：应用外壳与 5 个 Tab、启动时 `wx.login` 登录与会话刷新、发现页（公开导师列表）、
+  错误码映射与金额/时间格式化。详见 `apps/miniprogram/README.md`。
+- `project.config.json` 的 `appid` 仍是 `touristappid`（游客），**真机 `wx.login` 需替换为真实 AppID**。
+- 未实现：下单/支付、订单、聊天、儿童档案、导师入驻等页面（见前端任务分解 FE-30 起）。
 
 ## 5. 验证与测试
 

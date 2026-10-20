@@ -12,7 +12,7 @@
 
 | 页面 | 主要接口 | 状态 | 说明 |
 |---|---|---|---|
-| Login | `POST /auth/console/login`（用户名/密码，限流+锁定）；`POST /auth/refresh`；`GET /me`；`POST/DELETE /admin/console-credentials`（签发/撤销，ADMIN/OPS，审计） | ✅ | G1 已交付（T028）：凭据只对已持有 ADMIN/OPS 的账号生效，登录不授予角色；轮换与撤销均审计 |
+| Login | `POST /auth/console/login`（用户名/密码，限流+锁定）；`POST /auth/refresh`；`GET /me`；`POST/DELETE /admin/console-credentials`（签发/撤销，ADMIN/OPS，审计） | ✅ | G1 已交付（T027b）：凭据只对已持有 ADMIN/OPS 的账号生效，登录不授予角色；轮换与撤销均审计 |
 | First-admin bootstrap | `POST /admin/bootstrap`（首位管理员自检/授权） | ✅ | 已有接口；本地首次启动后借此获得 ADMIN 角色 |
 | 会话维持 | `POST /auth/logout` | ✅ | 退出即失效 refresh token |
 

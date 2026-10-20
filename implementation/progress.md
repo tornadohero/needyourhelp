@@ -34,7 +34,11 @@ A task is only marked `done` when every acceptance criterion in
 | T024 | Production readiness | done | backup/restore scripts + a restore drill that runs in CI; readiness probe; structured access logs; alerts, runbook, incident response, release checklist |
 | T025 | Git baseline | done | repository audit + git baseline audit; all T001–T024 work committed (`1d19e70`) and pushed; `.env` untracked, no secret in history; baseline tag `baseline-t024`; grouped commit plan for the remaining scope |
 | T026 | Workspace & build | done | install/prisma:generate/build/typecheck/lint all pass; `nest build` no longer bulk-deletes `apps/api/dist` (`deleteOutDir: false`); build verification report |
-| T028 | Gap closure G1/G3/G4 | done | admin console login (scrypt credentials, lockout, rate limit, audit); signed object upload/download route; conversation send/list messages; unit 425, integration 280/46, E2E 8 |
+| T027 | API contract audit | done | API contract map, miniprogram/admin page maps, implementation plan and task breakdown under `implementation/frontend/`; 15 contract gaps (G1–G15) recorded |
+| T027b | Backend gap closure G1/G3/G4 | done | admin console login (scrypt credentials, lockout, rate limit, audit); signed object upload/download route; conversation send/list messages; unit 425, integration 280/46, E2E 8 |
+| T028 | Mini program init | done | WeChat mini program engineering: 5-tab shell, wx.login session with single-flight refresh, injected-transport ApiClient, contract drift guard, 38 unit tests |
+| T029 | Mini program account & auth | done | account/profile/consent use cases: GET-PUT /me/profile, consent list/grant/revoke, account view model with suspended state, 61 unit tests |
+| T030 | Mini program provider discovery | done | discovery: GET /providers with normalised filters, paged load-more, provider detail (services/reviews/slots), filter sheet + sort UI, 89 unit tests |
 
 ## T002 — Database foundation
 
@@ -2410,7 +2414,29 @@ database, and the scratch database I used while writing the scripts was dropped.
 - `next build` 存在 "Next.js plugin was not detected in your ESLint configuration" 非阻塞告警。
 - 集成/E2E 未重跑（会重置测试库）；Redis 未接入（T028）；小程序无构建产物（T027）。
 
-## T028 — 补齐阻塞前端的三个后端缺口（G1 / G3 / G4）
+## T027 — 三端 API 契约审计与前端开发准备
+
+### 交付（`implementation/frontend/`）
+
+| 文件 | 内容 |
+|---|---|
+| `api-contract-map.md` | 按 13 个业务模块 + IM + 运维探针 + 职业复用，逐条列出 Method / Endpoint / 鉴权 / Request DTO / Response DTO / 错误码 / 对应 UI 页面 / 实现状态 / 测试证据 |
+| `miniprogram-page-map.md` | 32 个小程序页面（家长 15 / 导师 12 / 职业 5）× API 映射，标注未成年人、支付、导师权限、mock 可用性 |
+| `admin-page-map.md` | 14 个管理台页面 × API 映射与权限约束 |
+| `frontend-implementation-plan.md` | 契约先行、先管理台后小程序、共享基建、F0–F6 阶段、风险与控制、验收口径 |
+| `frontend-task-breakdown.md` | FE-01…FE-63 任务分解与推荐执行顺序 |
+
+### 基线数字（当时）
+
+- 后端路由 95 条；小程序可复用 56、管理台可复用 42
+- 小程序页面 32（5 个 Tab 容器除外）、管理台页面 14
+- 契约缺口 15 项（G1–G15），阻塞项 3 个：管理台登录（G1）、对象存储上传路由（G3）、IM 发消息（G4）
+
+### 规则
+
+不改后端代码、不改数据库、不创建前端页面、不虚构接口、不改状态机、不降低鉴权、不放密钥到前端。
+
+## T027b — 补齐阻塞前端的三个后端缺口（G1 / G3 / G4）
 
 ### G1 管理台控制台登录
 
@@ -2459,4 +2485,112 @@ database, and the scratch database I used while writing the scripts was dropped.
 ### 未做 / 需你决定
 
 - G2（公开单服务详情）、G5（订单时间线）、G6（前端埋点）、G7（结算收入）、G8（取消政策绑定订单）、G9/G15（通知与模板消息）、G10（订单争议接口）、G11（公开类目字典）、G12（儿童对导师受限可见）、G13（Dashboard 趋势）、G14（评价回复/申诉）仍缺失。
-- Redis 版限流/幂等（原 T028 计划）未做，顺延为下一个工程任务。
+- Redis 版限流/幂等（原 T028 计划）未做，顺延为下一个工程任务。（此项原记于缺口闭环章节，该章现已编号 T027b。）
+
+## T028 — 微信小程序工程初始化
+### 交付
+
+```
+apps/miniprogram
+├── app.ts / app.json / app.wxss              应用外壳：启动即完成一次 wx.login；5 个 Tab（首页/发现/消息/订单/我的）
+├── pages/{home,discover,messages,orders,me}/ 每页 .ts/.wxml/.wxss/.json，含 loading/empty/error/retry/未登录
+├── src/config.ts                             唯一部署配置项（API 原点；无密钥）
+├── src/app-context.ts                        client + session 单例装配
+├── src/core/{env,routes,envelope,errors,http,session,format}.ts   纯逻辑，Node 可测
+├── src/platform/wechat.ts                    全部 wx.* 适配（request / login / storage）
+├── src/services/{auth,discovery}.ts          登录、/me、公开导师列表与就绪检查
+├── README.md / vitest.config.ts / package.json / tsconfig.json
+```
+
+### 设计要点
+
+- **不引入运行时依赖**：小程序保留 `ROUTES` 副本（开发者工具无需构建 npm，workspace 软链在工具中不稳定），
+  由 `src/core/routes.test.ts` 与 `@mentor/api-contracts` 的 `ENDPOINTS` 逐一比对做**漂移守卫**。
+- **可测试性**：`wx.*` 只在 `src/platform/wechat.ts`；`ApiClient` 注入 transport，`SessionManager` 注入 store 与时钟，
+  因此登录/刷新/登出全部可在 Node 中断言。
+- **权限与状态机不下放**：只发 `code`，不请求角色；金额只格式化不计算；支付结果以后端状态为准。
+- **隐私**：Storage 只存 access/refresh token；儿童数据、证件 URL 一律不落盘。
+- `wx.request` 不支持 PATCH：适配器**显式报错**而不是降级为 POST。
+
+### 验证
+
+| 项 | 结果 |
+|---|---|
+| lint / format / typecheck / build | PASS |
+| 单元测试 | 小程序 **38 passed**（env 4、format 6、envelope 5、errors 4、routes 5、http 7、session 7）；全仓库 **478 passed** |
+| 实机之外的最小联调 | 用真实后端跑通：登录 → `/me` → `/providers` → `/health/ready` → 登出（Node 中以 fetch 作 transport）；冒烟数据已清理 |
+| 未触碰 | 后端代码、数据库结构、既有测试 |
+
+### 未实现（后续任务）
+
+下单与支付、订单列表/详情、聊天、儿童档案、举报、导师入驻与验证页面（前端任务分解 FE-30 起）；
+`project.config.json` 的 `appid` 仍为 `touristappid`，真机 `wx.login` 需替换为真实 AppID。
+
+## T029 — 小程序「用户与认证」
+
+### 交付
+
+| 文件 | 内容 |
+|---|---|
+| `src/core/account.ts` | 账号视图模型：`describeAccount`（含"已停用"状态）、角色文案、`looksLikeGuardian`（仅提示，服务端裁决） |
+| `src/core/consents.ts` | 同意记录：`isActive = granted && !revokedAt`（撤回后 `granted` 仍为 true）、类型文案、按时间倒序 |
+| `src/services/profile.ts` | `getProfile` / `updateProfile`（仅 displayName、avatarUrl、cityCode、timezone）/ `listConsents` / `grantConsent` / `revokeConsent` |
+| `pages/me/me.{ts,wxml,wxss}` | 「我的 / 隐私与设置」：账号卡（含停用提示）、资料查看与编辑、同意列表与撤回（二次确认）、退出登录；含 loading/empty/error/retry/未登录 |
+| `src/core/routes.ts` | 新增派生路由 `meConsent = '/me/consents/:consentType'`，漂移测试断言它仍在 `meConsents` 之下 |
+
+### 规则遵守
+
+- 只发显示字段：`PUT /me/profile` 的请求体只含昵称/头像/城市/时区，不含 userId、role、status。
+- 角色只展示不裁决：客户端不因角色隐藏入口，权限判断全在服务端（`specs/07`、`AGENTS.md` §7）。
+- 撤回同意是**权利**：始终可达，且需二次确认（`specs/10` §consent withdrawal）。
+- 停用账号显式展示，不假装可用。
+
+### 验证
+
+| 项 | 结果 |
+|---|---|
+| lint / format / typecheck / build | PASS |
+| 单元测试 | 小程序 **61 passed**（新增 account 8、consents 7、profile 8 = 23）；全仓库 **501 passed** |
+| 真实后端联调 | 登录 → `/me` → `GET /me/profile`（无监护人资料）→ `PUT`（昵称+城市生效，`hasGuardianDetails` 转 true）→ 同意：空 → 授予 PRIVACY v1（生效）→ 撤回（失效且 `revokedAt` 有值）→ 登出；冒烟数据已清理 |
+| 未触碰 | 后端代码、数据库结构、既有测试 |
+
+### 未实现
+
+儿童档案（`/me/children`）、头像上传（需对象存储直传链路）、实名与手机号绑定（规范未定义），
+以及导师侧资料；这些属于后续前端任务（FE-33 起）。
+
+## T030 — 小程序「导师发现」
+
+### 交付
+
+| 文件 | 内容 |
+|---|---|
+| `src/core/filters.ts` | `ProviderFilter`：默认值、规范化（代码转大写、未知方式/排序回落、倒置价格区间丢弃）、`toSearchQuery`（只发已设值）、`activeFilterCount`、`filterSummary` 文案 chips |
+| `src/core/paging.ts` | `appendPage`（按 id 去重，服务端分页漂移不产生重复行）、`hasMore` / `nextPage` / `resetWith` |
+| `src/core/provider-view.ts` | `describeSearchItem` / `describeService` / `describeProviderDetail` / `describeReview` / `describeSlot`：逐字段从公开契约构造，金额只格式化 |
+| `src/services/discovery.ts` | `searchProviders`（规范化后的筛选 + 分页）、`loadProviders`、`loadMoreProviders`、`canLoadMore`、`providerDetail`、`providerReviews`、`providerAvailability`、`loadProviderDetail`（三接口并行） |
+| `pages/discover/*` | 列表 + 筛选面板（城市/科目/年级/价格/方式/仅已验证）+ 排序（综合/评分/最新）+ chips + 上拉加载更多 + 空/错误/重试 |
+| `pages/provider/*` | 导师详情：服务（时长+价格+方式）、可预约时段、评价；含 loading/错误重试 |
+| `app.json` | 注册 `pages/provider/provider`（非 Tab 页） |
+
+### 规则遵守
+
+- **没有关键词检索**：后端契约只有结构化筛选，因此不实现"假搜索"，也不在客户端二次过滤。
+- 金额只展示：`minPriceMinor` / `priceMinor` 经 `formatMoney` 输出，客户端不计算。
+- 只渲染公开 DTO：owner user id、approvalStatus、searchable、能力状态与限制范围均不出现。
+- 未找到与无权限在客户端不可区分（`NOT_FOUND`），详情页统一提示并支持重试。
+- 未改后端、未改库、未触碰既有测试。
+
+### 验证
+
+| 项 | 结果 |
+|---|---|
+| lint / format / typecheck / build | PASS |
+| 单元测试 | 小程序 **89 passed**（新增 filters 8、paging 5、provider-view 8、discovery 7 = 28）；全仓库 **529 passed** |
+| 真实后端联调 | 造一位可发现导师后：`GET /providers` 全量 1 条；`city=BEIJING` 1 条；`city=SHANGHAI` 0 条；`minPrice` 过高 0 条；行视图输出"¥200.00 起"；详情页返回服务（1 小时 / ¥200.00）、1 个时段、0 条评价；不存在的导师 → `NOT_FOUND 404` |
+| 数据 | 冒烟数据已清理，开发库回到基线（users=7 / roles=14 / providers=0 / services=0 / slots=0 / cases=0 / terms=28 / audits=0 / consents=0） |
+
+### 未实现
+
+「服务详情」独立页面（后端无单服务接口，G2）、下单与支付、收藏/最近浏览、筛选字典下拉
+（依赖公开类目接口 G11），均属后续前端任务。
