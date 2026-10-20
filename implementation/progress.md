@@ -34,6 +34,7 @@ A task is only marked `done` when every acceptance criterion in
 | T024 | Production readiness | done | backup/restore scripts + a restore drill that runs in CI; readiness probe; structured access logs; alerts, runbook, incident response, release checklist |
 | T025 | Git baseline | done | repository audit + git baseline audit; all T001–T024 work committed (`1d19e70`) and pushed; `.env` untracked, no secret in history; baseline tag `baseline-t024`; grouped commit plan for the remaining scope |
 | T026 | Workspace & build | done | install/prisma:generate/build/typecheck/lint all pass; `nest build` no longer bulk-deletes `apps/api/dist` (`deleteOutDir: false`); build verification report |
+| T028 | Gap closure G1/G3/G4 | done | admin console login (scrypt credentials, lockout, rate limit, audit); signed object upload/download route; conversation send/list messages; unit 425, integration 280/46, E2E 8 |
 
 ## T002 — Database foundation
 
@@ -2408,3 +2409,54 @@ database, and the scratch database I used while writing the scripts was dropped.
 - `deleteOutDir: false` 后 `dist/` 可能残留旧产物（已忽略，CI 全新检出；需彻底重建时手动删除）。
 - `next build` 存在 "Next.js plugin was not detected in your ESLint configuration" 非阻塞告警。
 - 集成/E2E 未重跑（会重置测试库）；Redis 未接入（T028）；小程序无构建产物（T027）。
+
+## T028 — 补齐阻塞前端的三个后端缺口（G1 / G3 / G4）
+
+### G1 管理台控制台登录
+
+| 项 | 内容 |
+|---|---|
+| 新增接口 | `POST /auth/console/login`、`POST /admin/console-credentials`、`DELETE /admin/console-credentials/:userId` |
+| 凭据存储 | 新表 `console_credentials`（迁移 `20261020090000_console_credentials`，仅新增，未改动既有表） |
+| 口令 | `scrypt`（Node 内置，无新依赖），每凭据随机盐，恒定时间比较；长度 ≥12，用户名归一化为小写 |
+| 失败处理 | 计数 + 5 次失败锁定 15 分钟；未知用户名/错误口令/非运营账号返回**同一**错误，不可枚举 |
+| 权限 | 凭据只对**已持有** `ADMIN`/`OPS` 的账号生效：登录证明角色，不授予角色 |
+| 限流 | `auth.console` 5 次/分钟/地址 |
+| 审计 | `CONSOLE_CREDENTIAL_ISSUED`、`CONSOLE_CREDENTIAL_REVOKED`；快照为白名单，不含口令与哈希 |
+| 测试 | 单元 `console-credential.spec.ts`（9）、集成 `console-auth-http.spec.ts`（2） |
+
+### G3 对象存储上传/下载路由
+
+| 项 | 内容 |
+|---|---|
+| 新增接口 | `PUT /files/verification/:caseId/:documentId?expires=&signature=`、`GET`（同路径） |
+| 凭据 | 签名即凭证（HMAC 绑定 用途+对象 key+过期），秒级过期校验，下载 URL 不能当上传用 |
+| 校验 | 类型白名单（`image/jpeg|png|webp`、`application/pdf`）、大小上限 `VERIFICATION_DOCUMENT_MAX_BYTES`、先查 `content-length` 再读流并设硬上限 |
+| 生产形态 | 直连私有 bucket 时**不绑定**该路由（返回 404），API 形状不变 |
+| 配套 | 全局 64 KiB 请求体上限对 `/files/` 豁免（该路由自行限大小） |
+| 测试 | 单元 `files.controller.spec.ts`（5）、集成 `verification-files-http.spec.ts`（2） |
+
+### G4 会话消息收发
+
+| 项 | 内容 |
+|---|---|
+| 新增接口 | `POST /conversations/:id/messages`、`GET /conversations/:id/messages?limit=` |
+| 内容归属 | 仍由传输适配器持有（`specs/09`），平台只落 `message_refs`（外部消息 id、发送者、类型、审核状态 PENDING） |
+| 校验 | 成员、会话 OPEN、双向屏蔽；空消息/超长/未知字段被拒；`messages.send` 60 次/分钟/账号 |
+| 测试 | 单元 `messages.spec.ts`（6）、集成 `messaging-messages-http.spec.ts`（2） |
+
+### 验证结果
+
+| 项 | 结果 |
+|---|---|
+| lint / format / typecheck / build | PASS |
+| 单元测试 | **425 passed**（新增 20） |
+| 集成测试 | **280 passed / 46 files**（新增 3 文件 6 用例） |
+| E2E | **8 passed / 8 files** |
+| 运行时冒烟 | 控制台登录 → `/me` → `/admin/dashboard` 200；消息发送与对方读取往返成功；伪造签名的上传 403 |
+| 数据库 | 迁移已应用到开发库（仅新增一张表）；冒烟数据已清理（users=7 / roles=14 / creds=0 / convs=0 / refs=0 / sessions=0 / audits=0） |
+
+### 未做 / 需你决定
+
+- G2（公开单服务详情）、G5（订单时间线）、G6（前端埋点）、G7（结算收入）、G8（取消政策绑定订单）、G9/G15（通知与模板消息）、G10（订单争议接口）、G11（公开类目字典）、G12（儿童对导师受限可见）、G13（Dashboard 趋势）、G14（评价回复/申诉）仍缺失。
+- Redis 版限流/幂等（原 T028 计划）未做，顺延为下一个工程任务。
