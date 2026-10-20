@@ -27,7 +27,7 @@
 | P4 | Tutor list（列表） | 同 P2（分页、空态、排序） | 公开 | — | — | ✅ |
 | P5 | Tutor detail（导师详情） | `GET /providers/:id`、`GET /providers/:id/reviews`、`GET /providers/:id/availability` | 公开 | — | — | ✅ |
 | P6 | Service detail（服务详情） | `GET /providers/:id/services`（无单服务接口） | 公开 | — | — | ⚠️ G2 |
-| P7 | Chat（聊天） | `POST /conversations`、`GET /conversations/:id`、`POST /users/:id/block` | 买方本人 | — | — | ⚠️ G4（无法发送用户消息） |
+| P7 | Chat（聊天） | `POST /conversations`、`GET /conversations/:id`、`POST /conversations/:id/messages`、`GET /conversations/:id/messages?limit=`、`POST/DELETE /users/:id/block` | 买方本人 | — | — | ✅（G4 已交付） |
 | P8 | Create booking（创建预约） | `GET /providers/:id/availability`、`POST /orders`（**金额服务端定**）、`GET /me/children`（选孩子） | 买方 | ✅ 儿童档案 | — | ✅ |
 | P9 | Order confirmation（确认页） | `GET /orders/:id` | 买方 | 展示孩子昵称（白名单字段） | — | ✅ |
 | P10 | Payment（支付） | `POST /orders/:id/payment-session`、`GET /orders/:id/payment-status`（**以服务端状态为准**） | 买方 | — | ✅ 真实支付 | ✅（mock 可本地联调） |
@@ -42,8 +42,8 @@
 | # | 页面 | 主要接口 | 权限 | 状态 |
 |---|---|---|---|---|
 | T1 | Provider onboarding（入驻） | `POST /providers/applications`、`GET/PATCH /providers/me`、`POST /providers/me/submit` | 登录用户 | ✅ |
-| T2 | Identity verification（身份验证） | `POST /verification/cases`、`POST /verification/cases/:id/documents/upload-url`、`POST /verification/cases/:id/submit` | 本人 | ⚠️ G3（上传地址无后端路由，本地无法完成上传） |
-| T3 | Education verification（学历验证） | 同 T2（`verificationType=EDUCATION`，文档类型 `DIPLOMA`） | 本人 | ⚠️ G3 |
+| T2 | Identity verification（身份验证） | `POST /verification/cases`、`POST /verification/cases/:id/documents/upload-url`、`PUT /files/verification/:caseId/:documentId?expires=&signature=`、`POST /verification/cases/:id/submit` | 本人 | ✅（G3 已交付：签名 URL 现在可上传） |
+| T3 | Education verification（学历验证） | 同 T2（`verificationType=EDUCATION`，文档类型 `DIPLOMA`） | 本人 | ✅（G3 已交付） |
 | T4 | Profile editor（资料编辑） | `PATCH /providers/me?providerType=TUTORING` | 导师本人 | ✅ |
 | T5 | Service editor（服务编辑） | `POST/GET /providers/me/services?providerType=`、`PATCH /providers/me/services/:id`、`:id/publish`、`:id/unpublish` | 导师本人 | ✅ |
 | T6 | Availability（可用时间） | `POST /providers/me/availability?providerType=`、`DELETE /providers/me/availability/:id` | 导师本人 | ✅ |
@@ -51,7 +51,7 @@
 | T8 | Earnings（收入，特性开关） | 无接口 | 导师本人 | ❌ G7（`specs/08` V1 可延后） |
 | T9 | Reviews（评价） | `GET /providers/:id/reviews`（公开，按自己的 providerId） | 导师本人 | ✅（回复 ❌ G14） |
 | T10 | Verification status（验证状态） | `GET /verification/me?providerType=`、`GET /providers/me` | 本人 | ✅ |
-| T11 | Chat（聊天） | `POST /conversations`、`GET /conversations`、`GET /conversations/:id` | 导师本人 | ⚠️ G4 |
+| T11 | Chat（聊天） | `POST /conversations`、`GET /conversations`、`GET /conversations/:id`、`POST/GET /conversations/:id/messages` | 导师本人 | ✅（G4 已交付） |
 | T12 | Settings（设置） | `GET/PUT /me/profile`、`POST /auth/logout` | 本人 | ✅ |
 
 ## 4. 职业赛道页面（5，`career_marketplace_enabled` 为真时显示）
@@ -86,7 +86,7 @@
 | 项 | 数量 |
 |---|---|
 | 小程序页面总数（含职业赛道，不含 5 个 Tab 容器） | **32**（家长 15 + 导师 12 + 职业 5） |
-| 有现成 API 支撑 | 24 |
-| 部分支撑（缺 1 项能力） | 7（P3、P6、P7、T2、T3、T11、C3） |
+| 有现成 API 支撑 | 28 |
+| 部分支撑（缺 1 项能力） | 3（P3 类目字典、P6/C3 单服务详情） |
 | 完全缺 API | 1（T8 Earnings） |
-| 可直接复用的接口数 | **56** |
+| 可直接复用的接口数 | **59** |

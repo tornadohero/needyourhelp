@@ -10,12 +10,12 @@
 | 项 | 结论 | 依据 |
 |---|---|---|
 | 后端可本地启动 | 是 | `/api/v1/health` 200、`/health/ready` 200 且 `database:"up"`（`implementation/launch/build-verification.md`） |
-| 后端路由总数 | 95 | `implementation/frontend/api-contract-map.md` |
-| 小程序可复用接口 | 56 | 同上 §17.1 |
-| 管理台可复用接口 | 42 | 同上 §17.1 |
+| 后端路由总数 | 102 | `implementation/frontend/api-contract-map.md` |
+| 小程序可复用接口 | 59 | 同上 §17.1 |
+| 管理台可复用接口 | 48 | 同上 §17.1 |
 | 小程序页面 | 32（家长 15 + 导师 12 + 职业 5） | `specs/11` |
 | 管理台页面 | 14（5 主 + 9 子） | `specs/11` §Admin Web / `specs/12` |
-| 契约缺失 | 15 项（G1–G15） | `api-contract-map.md` §17.2 |
+| 契约缺失 | 15 项（G1–G15），其中 **G1/G3/G4 已于 T028 交付** | `api-contract-map.md` §17.2 |
 | 阻塞级缺失 | **G1 管理台登录**、**G3 对象上传路由**、**G4 IM 发消息** | 同上 |
 | 构建/测试基线 | Build / Typecheck / Lint 全绿 | `implementation/launch/build-verification.md` |
 

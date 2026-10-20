@@ -12,7 +12,7 @@
 
 | 页面 | 主要接口 | 状态 | 说明 |
 |---|---|---|---|
-| Login | `POST /auth/wechat/login`（**仅 mock/本地**）；`POST /auth/refresh`；`GET /me` | ⚠️ | **G1**：没有非微信的管理员登录方式。生产前必须新增（用户名密码/SSO/或服务端签发的控制台会话） |
+| Login | `POST /auth/console/login`（用户名/密码，限流+锁定）；`POST /auth/refresh`；`GET /me`；`POST/DELETE /admin/console-credentials`（签发/撤销，ADMIN/OPS，审计） | ✅ | G1 已交付（T028）：凭据只对已持有 ADMIN/OPS 的账号生效，登录不授予角色；轮换与撤销均审计 |
 | First-admin bootstrap | `POST /admin/bootstrap`（首位管理员自检/授权） | ✅ | 已有接口；本地首次启动后借此获得 ADMIN 角色 |
 | 会话维持 | `POST /auth/logout` | ✅ | 退出即失效 refresh token |
 
@@ -98,5 +98,5 @@
 | 管理台页面（含子页面） | **14**（5 主页面：Dashboard / 商家审核 / 订单 / 审核 / 平台配置；9 子页面：登录引导、引导授权、商家详情、订单详情、案件详情、类目、费率、取消政策、开关与规则、用户权限） |
 | 有现成 API | 12 |
 | 部分支撑 | 2（Dashboard 转换率/趋势、取消政策与订单绑定） |
-| 阻塞（缺 API） | 1（**G1 管理员登录**） |
-| 可复用接口数 | **42** |
+| 阻塞（缺 API） | 0 |
+| 可复用接口数 | **48** |
