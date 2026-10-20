@@ -1,0 +1,69 @@
+.page {
+  padding: 32rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.hint {
+  font-size: 28rpx;
+  color: #8a8a8a;
+}
+
+.state {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+}
+
+.card {
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  border-radius: 16rpx;
+  background: #f6f7f9;
+}
+
+.button {
+  margin-top: 24rpx;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 48rpx;
+  background: #e6e8eb;
+}
+
+.section {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.input {
+  border: 1rpx solid #d8dade;
+  border-radius: 8rpx;
+  padding: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.consent {
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #eceef0;
+}
+
+.notice {
+  padding: 16rpx;
+  margin-bottom: 16rpx;
+  border-radius: 8rpx;
+  background: #eaf3ff;
+  font-size: 26rpx;
+}

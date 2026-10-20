@@ -1,0 +1,68 @@
+<view class="page">
+  <view class="title">我的</view>
+
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:elif="{{sessionState === 'needs-login'}}" class="state">
+    正在为你登录；若持续失败，请检查网络后重试。
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <block wx:else>
+    <view wx:if="{{notice}}" class="notice">{{notice}}</view>
+
+    <view class="card">
+      <view class="row">
+        <image wx:if="{{account.avatarUrl}}" class="avatar" src="{{account.avatarUrl}}" />
+        <view>
+          <view>{{account.name}}</view>
+          <view class="hint">{{account.roleText}}</view>
+        </view>
+      </view>
+      <view class="hint">账号状态：{{account.statusText}}</view>
+    </view>
+
+    <view class="card">
+      <view class="section">资料</view>
+
+      <view wx:if="{{!editing}}">
+        <view>昵称：{{profile.displayName}}</view>
+        <view>城市：{{profile.cityCode ? profile.cityCode : '未填写'}}</view>
+        <view class="hint">时区：{{profile.timezone}}</view>
+        <button class="button" size="mini" bindtap="onEdit">编辑</button>
+      </view>
+
+      <view wx:else>
+        <input class="input" value="{{draftName}}" placeholder="昵称" bindinput="onNameInput" />
+        <input class="input" value="{{draftCity}}" placeholder="城市代码，如 BEIJING" bindinput="onCityInput" />
+        <button class="button" size="mini" loading="{{busy}}" bindtap="onSave">保存</button>
+        <button class="button" size="mini" bindtap="onCancelEdit">取消</button>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section">同意与隐私</view>
+      <view wx:if="{{consents.length === 0}}" class="hint">还没有任何同意记录。</view>
+      <view wx:else class="consent" wx:for="{{consents}}" wx:key="type">
+        <view class="row">
+          <text>{{item.label}}（v{{item.policyVersion}}）</text>
+          <text class="hint">{{item.active ? '已同意' : '已撤回'}}</text>
+        </view>
+        <button
+          wx:if="{{item.active}}"
+          class="button"
+          size="mini"
+          data-type="{{item.type}}"
+          bindtap="onRevokeConsent"
+        >撤回</button>
+      </view>
+    </view>
+
+    <button class="button" type="warn" bindtap="onSignOut">退出登录</button>
+  </block>
+</view>
