@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: 'Operations console for the mentor marketplace.',
 };
 
+import './globals.css';
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="zh-CN">

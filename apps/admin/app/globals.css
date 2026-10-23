@@ -1,0 +1,119 @@
+body {
+  margin: 0;
+  background: #f5f6f8;
+  color: #1f2328;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.nav {
+  width: 200px;
+  padding: 24px 16px;
+  background: #ffffff;
+  border-right: 1px solid #e6e8eb;
+}
+
+.nav a {
+  display: block;
+  padding: 8px 0;
+  color: #1f2328;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.nav .brand {
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.content {
+  flex: 1;
+  padding: 24px 32px;
+}
+
+h1 {
+  font-size: 20px;
+  margin: 0 0 16px;
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.card {
+  min-width: 200px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e6e8eb;
+}
+
+.card .label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.card .value {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.card .hint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border: 1px solid #e6e8eb;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+th,
+td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eef0f2;
+}
+
+.state {
+  padding: 16px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e6e8eb;
+}
+
+form.inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+input,
+select,
+button {
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+button {
+  cursor: pointer;
+}
+
+.error {
+  color: #b42318;
+  font-size: 13px;
+}
