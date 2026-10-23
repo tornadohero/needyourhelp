@@ -6,6 +6,7 @@ import {
   newServiceDraft,
   discoveryService,
   ordersService,
+  paymentsService,
   providerDeskService,
   verificationService,
   withDuration,
@@ -161,26 +162,17 @@ describe('three-end journey: apply, approve, book, deliver, refund', () => {
     scenario.orderId = order.id;
     scenario.orderNo = order.orderNo;
 
-    // Payment is the one step no client can do yet: the gateway calls back.
-    const session = dataOf<{ providerTransactionId: string }>(
-      await rawCall('POST', `/orders/${order.id}/payment-session`, {
-        token: parent.session.tokens?.accessToken,
-        body: {},
-      }),
-      201,
-    );
-    const notified = await rawCall('POST', '/payments/wechat/notify', {
-      body: {
-        orderNo: order.orderNo,
-        providerTransactionId: session.providerTransactionId,
-        amountMinor: scenario.priceMinor,
-        status: 'SUCCEEDED',
-      },
+    // Payment now runs through the parent's own module: a session, the local
+    // gateway callback, then the server's answer (`specs/08`: the client never
+    // decides that an order is paid).
+    const { session: payment } = await paymentsService.createPaymentSession(parent, order.id);
+    await paymentsService.simulateGatewayCallback(parent, payment);
+    const paid = await paymentsService.waitForPayment(parent, order.id, {
+      attempts: 5,
+      intervalMs: 100,
+      sleep: async () => undefined,
     });
-    expect(
-      dataOf<{ applied: boolean; orderStatus: string }>(notified).applied,
-      'the callback moved the order',
-    ).toBe(true);
+    expect(paid.outcome, 'the server confirmed the payment').toBe('paid');
 
     scenario.provider = provider;
     scenario.parent = parent;

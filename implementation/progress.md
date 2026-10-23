@@ -44,6 +44,7 @@ A task is only marked `done` when every acceptance criterion in
 | T033 | Admin console | done | Next.js operations console: console login (httpOnly session), dashboard, provider review, verification queue with signed document access, orders and idempotent refunds, users and roles, audit log, feature flags, taxonomy (archive only), platform rules (explicit publish); 34 new admin unit tests (36 total) |
 | T034 | Redis & dependency completeness | done | ioredis-backed rate limiter (INCR/EXPIRE/TTL) and idempotency store (SET NX claim + stored answer) with in-process fallback; optional DI so modules build alone; `ops/redis.md`; lockfile still `install --frozen-lockfile` clean; 18 new unit tests (445 api) |
 | T035 | Three-end E2E | done | `apps/e2e`: real API process on a disposable DB, driven by the shipping mini program modules and the shipping admin client over HTTP — apply/evidence/approve/publish/discover/book/pay/deliver/idempotent refund/audit; 7 tests |
+| T035b | Parent payment screen (FE-35) | done | money screen + session/status/polling use cases, `wx.requestPayment` behind the platform adapter, local-only mock gateway seam; 18 new unit tests (214 miniprogram) |
 
 ## T002 — Database foundation
 
@@ -2810,3 +2811,35 @@ FE-14（教师合规）、FE-16（举报队列）、FE-17（申诉终审）不�
 - 家长端支付页未实现，支付这一步仍由裸 HTTP 的 mock 回调代替（T032 之后的下一个前端任务）。
 - 隐私与权限回归（FE-62）只间接覆盖（儿童隔离等已有单端 E2E-06）；未在三端旅程中复现。
 - 三端 E2E 依赖本地 PostgreSQL；CI 已有 postgres 服务，但尚未在 CI 上实际跑过（本地已跑通）。
+
+## T035b — 家长支付页（T036 之前补做）
+
+对应 `frontend-task-breakdown.md` 的 **FE-35（支付与结果：以 `payment-status` 为准）**。编号未占用 T036 —— 若你希望它就是 T036，我可以改名。
+
+### 交付
+
+| 层 | 文件 |
+|---|---|
+| 核心 | `src/core/payment.ts`：会话与状态视图模型、`outcomeOf`、`wechatPaymentParams`（无 `paySign` 即返回 null） |
+| 服务 | `src/services/payments.ts`：`createPaymentSession`、`readPaymentStatus`、`waitForPayment`（轮询直到服务端有结论；超时是"仍未知"而非失败）、`simulateGatewayCallback`（**仅 MOCK**） |
+| 平台 | `src/platform/wechat.ts` 新增 `requestPayment()` —— 唯一会打开收银台的地方 |
+| 页面 | `pages/payment`（金额屏：服务/时长/单价/应付/订单号/时间 + 状态 + 渠道 + 退款规则）、`pages/order-detail` 的「去支付（金额）」入口 |
+| 契约 | `ROUTES.paymentNotify` 补齐并纳入漂移守卫 |
+
+### 验收与证据
+
+- **不以本机回调为准**：`onPay` 先开收银台（有签名才开），随后只信 `GET /orders/:id/payment-status`；`waitForPayment` 轮询直到 `paid/failed`，超时报"支付结果：等待支付结果"。
+- **金额屏完整**：服务、时长、单价、应付、订单号、时间全部来自订单；按钮文案展示服务端金额。
+- **没有签名不开收银台**：`wechatPaymentParams` 缺 `paySign` 返回 `null`（mock 场景），页面改为只问服务端。
+- **模拟支付不能进生产**：`simulateGatewayCallback` 对非 `MOCK` provider 直接抛错，单测断言不发请求。
+- **三端 E2E 已改为走客户端模块**：`apps/e2e` 的支付步骤由 `paymentsService.createPaymentSession + simulateGatewayCallback + waitForPayment` 完成，裸 HTTP 例外现在只剩 bootstrap 一处。
+
+### 测试
+
+- 新增 18 个单测（核心 10、服务 8），小程序单测 **196 → 214**。
+- 三端 E2E **7/7** 通过（支付已改走客户端模块）；`format`/`lint`/`typecheck` 通过。
+
+### 未做
+
+- 真实微信支付联调（需要商户号与真机；`wx.requestPayment` 已就位，参数由服务端下发）。
+- 支付失败后的重试策略（目前为重新发起会话，平台保证会话复用 `reused`）。

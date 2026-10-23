@@ -313,6 +313,22 @@ Acceptance:
 - only two steps use raw HTTP, and both are named in the test: the mock-gateway payment callback (the parent payment screen is a later task) and the first-administrator bootstrap.
 - the journey ends where an auditor would look: the refund is idempotent, the parent sees the refund, and the operator's decisions are in the audit log.
 
+## T035b Parent payment screen
+The money screen and the payment flow of the mini program (FE-35), done before T036 because it is the last missing step of the parent journey.
+Input: `specs/11-pages-and-ui.md` §Parent pages (Payment / money screens), `specs/08-payment-and-settlement.md` (server confirms), `implementation/frontend/frontend-task-breakdown.md` (FE-35), `implementation/frontend/api-contract-map.md` §Payments.
+Output:
+- `src/core/payment.ts` — session and status view models, and the narrowing of the provider's own cashier parameters
+- `src/services/payments.ts` — session, status, polling until the server knows, and a **local-only** seam that plays the gateway callback for the `MOCK` provider
+- `src/platform/wechat.ts` — `wx.requestPayment` as the only place that opens a cashier
+- `pages/payment` and the "去支付" entry on `pages/order-detail`
+- unit tests (18)
+Acceptance:
+- the screen is believed only when `GET /orders/:id/payment-status` says so; a resolved `wx.requestPayment` is a hint, never the answer.
+- the money screen shows service, duration, unit price, total, order number and the refund rule, all from the order the server recorded.
+- the cashier is opened only with a real signature in hand: without `paySign` the client does not call WeChat at all.
+- the mock seam refuses to run for any provider other than `MOCK`, so it cannot become a production path.
+- a timeout while polling is reported as "the server still does not know", not as failure.
+
 ## CodeBuddy execution instruction
 
 Execute tasks strictly in order unless a dependency is explicitly satisfied.
@@ -327,4 +343,4 @@ For each task:
 7. Report files changed and acceptance results.
 8. Stop before the next task unless the user asks to continue.
 
-Never generate T001-T035 in one uncontrolled pass.
+Never generate T001-T035b in one uncontrolled pass.
