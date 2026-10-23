@@ -235,6 +235,40 @@ Acceptance:
 - `GET /providers` is filtered and paged by the server; the client never re-filters locally.
 - no child or private field appears in the list or detail view.
 
+## T031 Mini program booking and orders
+Parent-side booking and the order screens.
+Input: `specs/11-pages-and-ui.md` (Create booking / Order detail / money screens), `specs/05-api-spec.md` §Orders, `specs/06-verification-state-machine.md` §Order, `specs/01-business-rules.md` §Orders, `implementation/frontend/frontend-task-breakdown.md` (FE-34, FE-36).
+Output:
+- `src/core/booking.ts` — the draft: service, the slot's own window, an optional child, a note; and the request body, which has no money field
+- `src/core/order-view.ts` — order row/detail/refund view models, status labels, and which commands a state allows
+- `src/core/children.ts`, `listChildren()` — the guardian's child picker, consent-gated
+- `src/services/orders.ts` — `POST /orders`, `GET /orders`, `GET /orders/:id`, `POST /orders/:id/cancel`, `POST /orders/:id/refund-request`, `GET /orders/:id/refunds`
+- `pages/booking`, `pages/order-detail`, the real `pages/orders` list, and the booking entry on `pages/provider`
+- unit tests (45)
+Acceptance:
+- a booking never sends an amount, a price, a fee or a status: the server derives them, and the client's request type has no field for them.
+- the scheduled window is the chosen slot's own, so a client cannot ask for a window the provider never published.
+- a money screen shows service, duration, unit price, total and order number, all from the order the server recorded.
+- a status is read, never written: cancel and refund-request are commands, and 409 reloads the order instead of retrying the write.
+- cancellation/refund rules are never hidden behind a shortened label.
+
+## T032 Mini program provider desk
+The provider side of the mini program: onboarding, services, availability and delivery.
+Input: `specs/11-pages-and-ui.md` §Provider pages, `specs/01-business-rules.md` §Provider approval / §Services, `specs/06-verification-state-machine.md` §Order, `specs/05-api-spec.md` §Services / §Availability, `implementation/frontend/frontend-task-breakdown.md` (FE-40, FE-42, FE-43, FE-44, FE-46).
+Output:
+- `src/core/provider-desk.ts` — the provider's own record as a view model (approval, `searchable`, capabilities, verification), the one command an order can run, and the application body
+- `src/core/service-form.ts` — the service editor: the provider's own price and duration, sent as integer minor units
+- `src/core/slot-form.ts` — a wall-clock window as the ISO pair the API speaks
+- `src/services/provider-desk.ts` — `GET /providers/me`, `POST /providers/applications`, `POST /providers/me/submit`, `GET/POST /providers/me/services`, publish/unpublish, `GET/POST/DELETE` availability, `confirm` / `start` / `complete`
+- `pages/provider-desk`, `pages/provider-services`, `pages/provider-slots`, `pages/provider-orders`, and the entry on `pages/me`
+- unit tests (47)
+Acceptance:
+- a provider reads their own record, including what the public payload hides, but never sets approval, `searchable` or a role: those are commands the server owns.
+- publishing a service is refused while approval is missing, and the refusal is shown with the server's reason instead of being hidden.
+- an overlapping slot is answered by the server, not pre-checked on the client (T011 owns the invariant).
+- delivery is exactly three commands — accept, start, finish — and a 409 reloads the order instead of retrying.
+- the provider's price is sent as integer minor units; no float reaches the wire.
+
 ## CodeBuddy execution instruction
 
 Execute tasks strictly in order unless a dependency is explicitly satisfied.
@@ -249,4 +283,4 @@ For each task:
 7. Report files changed and acceptance results.
 8. Stop before the next task unless the user asks to continue.
 
-Never generate T001-T030 in one uncontrolled pass.
+Never generate T001-T032 in one uncontrolled pass.

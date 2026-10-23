@@ -39,6 +39,8 @@ A task is only marked `done` when every acceptance criterion in
 | T028 | Mini program init | done | WeChat mini program engineering: 5-tab shell, wx.login session with single-flight refresh, injected-transport ApiClient, contract drift guard, 38 unit tests |
 | T029 | Mini program account & auth | done | account/profile/consent use cases: GET-PUT /me/profile, consent list/grant/revoke, account view model with suspended state, 61 unit tests |
 | T030 | Mini program provider discovery | done | discovery: GET /providers with normalised filters, paged load-more, provider detail (services/reviews/slots), filter sheet + sort UI, 89 unit tests |
+| T031 | Mini program booking & orders | done | booking (service + the slot's own window + optional child, no money sent), order list/detail, cancel and refund-request commands, child picker consent-gated; 45 new unit tests (134 total) |
+| T032 | Mini program provider desk | done | provider desk (own record, application, submit for review, verification status), service management (create/publish/unpublish), availability management, delivery commands confirm/start/complete; 47 new unit tests (181 total) |
 
 ## T002 — Database foundation
 
@@ -2618,3 +2620,73 @@ apps/miniprogram
 
 「服务详情」独立页面（后端无单服务接口，G2）、下单与支付、收藏/最近浏览、筛选字典下拉
 （依赖公开类目接口 G11），均属后续前端任务。
+
+## T031 — 小程序「预约与订单」
+
+对应 `frontend-task-breakdown.md` 的 **FE-34（创建预约）** 与 **FE-36（订单列表与详情：取消、退款申请、退款进度）`；支付（FE-35）不在本任务内，订单详情对 `PENDING_PAYMENT` 只展示状态。
+
+### 交付
+
+| 层 | 文件 |
+|---|---|
+| 核心 | `src/core/booking.ts`（预约草稿 + 请求体）、`src/core/order-view.ts`（状态/金额/退款视图）、`src/core/children.ts`（孩子选项） |
+| 服务 | `src/services/orders.ts`（下单、列表、详情、取消、退款申请、退款进度）、`src/services/profile.ts` 新增 `listChildren()` |
+| 页面 | `pages/booking`（选服务/时段/孩子/备注）、`pages/order-detail`（金额屏 + 取消 + 退款申请 + 退款进度）、`pages/orders`（真实列表与加载更多）、`pages/provider`（预约入口：整导师 / 单个服务） |
+| 平台 | `src/platform/wechat.ts` 新增 `navigateTo` / `redirectTo` / `showToast` / `confirm`，保持 `wx.*` 只在适配层 |
+| 契约 | `packages/api-contracts` 的 `ENDPOINTS` 补齐 `orderDetail`、`orderCancel`，并纳入小程序路由漂移守卫 |
+
+### 验收与证据
+
+- **金额不由客户端决定**：`CreateOrderBody` 只有 `serviceId / childId / scheduledStart / scheduledEnd / note?`；测试断言序列化后的 body 不含 `amount|price|fee|currency|status`，且请求体与 `bookingRequest()` 完全一致（`orders.test.ts`）。
+- **时段来自导师发布的槽位**：`slotOptions()` 只保留 `OPEN` 且未过期的槽并按开始时间排序，提交的是槽位自带的 `startAt/endAt`（T011 整槽占用，客户端不拼时间）。
+- **金额屏完整**：订单详情展示服务、时长、单价、合计、订单号、时间、下单时间；单价取自 `priceSnapshot`，合计取自 `amountMinor`，即使两者不同也各自如实显示（不重算）。
+- **状态只读**：取消与退款申请走命令端点；`ORDER_INVALID_STATE`(409) 的处理是刷新详情而不是重试写入（`order-detail.ts`）。
+- **退款不带金额**：`POST /orders/:id/refund-request` 只发 `reason?`，服务端回答 `refundableMinor`；退款进度走 `GET /orders/:id/refunds`。
+- **儿童最小化**：孩子选择器只显示昵称与年级，不渲染学校/学习目标/出生年份；`consentStatus !== 'GRANTED'` 的孩子不可选（`specs/10`）。
+- **订单详情不泄露孩子**：订单只有 `childId`，文案只说"已关联/未关联孩子档案"。
+
+### 测试
+
+- 新增 45 个单测（订单视图 12、预约 11、孩子 5、订单服务 15、孩子列表 2），小程序单测 **89 → 134**，全仓库单测 574 通过。
+- `format` / `lint` / `typecheck` 全部通过。
+
+### 未做（后续任务）
+
+- 支付与支付结果（FE-35）：`payment-session` / `payment-status`（建议 T032）。
+- 订单时间线（G5）、评价（FE-37）、举报申诉（FE-38）、聊天入口（FE-50）。
+- 导师侧接单（confirm/start/complete，FE-44）。
+
+## T032 — 小程序「导师工作台」
+
+对应 `frontend-task-breakdown.md` 的 **FE-40（入驻申请）**、**FE-42（服务管理与发布/下架）**、**FE-43（可用时间管理）**、**FE-44（接单与交付）**、**FE-46（验证状态页）**。
+
+### 交付
+
+| 层 | 文件 |
+|---|---|
+| 核心 | `src/core/provider-desk.ts`（档案/能力/验证/服务/时段视图 + 接单命令判定 + 入驻申请体）、`src/core/service-form.ts`（服务表单与分为单位的金额）、`src/core/slot-form.ts`（本地时间 → ISO） |
+| 服务 | `src/services/provider-desk.ts`（档案、验证、入驻、提交审核、服务增删改发布、时段增删、confirm/start/complete） |
+| 页面 | `pages/provider-desk`、`pages/provider-services`、`pages/provider-slots`、`pages/provider-orders`、`pages/provider-reviews`；`pages/me` 新增「导师工作台」入口 |
+| 契约 | `ENDPOINTS` 补齐 `providerServicePublish`、`providerServiceUnpublish`、`providerSlot`、`orderConfirm`、`orderStart`、`orderComplete`，并纳入路由漂移守卫 |
+
+### 验收与证据
+
+- **只读服务端决定的字段**：工作台展示 `approvalStatus`、`searchable`、能力状态、验证状态；提交/发布一律走命令端点，请求体中不含 `approvalStatus` / `searchable` / `userId` / `roles`（`provider-desk.test.ts` 断言）。
+- **未通过审核不能发布**：`publishService` 走 `POST /providers/me/services/:id/publish`，服务端拒绝时页面显示服务端原因（不隐藏按钮、不本地预判）。
+- **时段冲突由服务端裁决**：客户端不做重叠校验，冲突以错误提示呈现（T011 拥有该不变量）。
+- **交付只有三个命令**：`PAID→confirm`、`CONFIRMED→start`、`IN_PROGRESS→complete`；409 走刷新而非重试。
+- **金额是整数分**：`yuanToMinor()` 只接受整数或两位小数，`serviceRequest()` 输出的 `priceMinor` 为整数（测试断言 `Number.isInteger`）。
+- **导师订单与家长订单分离**：`GET /orders` 返回参与方全部订单，工作台用 `providerId` 过滤出"我要交付的"（`providerOrdersOnly`）。
+
+### 测试
+
+- 新增 49 个单测（工作台 13、服务表单 15、时段表单 4、工作台服务 15、评价列表 2），小程序单测 **134 → 183**，全仓库单测 623 通过。
+- `format` / `lint` / `typecheck` 全部通过。
+
+### 缺口（未做，需决策）
+
+- **资料编辑（FE-40 的编辑部分）不可用**：`PATCH /providers/me` 与 `PATCH /providers/me/services/:id` 是唯一接口，而 `wx.request` 无 PATCH（`src/platform/wechat.ts` 明确拒绝降级为 POST）。需要后端补 PUT/POST 语义，或前端改为整表提交，才能做资料与服务编辑。
+- **证件上传（FE-41，阻塞）**：后端要求 `fileHash` 为 **SHA-256 hex**（`isSha256Hex`），而小程序 `wx.getFileInfo` 只提供 `md5` / `sha1`，基础库无 SHA-256，因此无法在客户端生成合规的上传凭证。可行解法（三选一，需你定）：① 服务端改为只认服务端计算的哈希，去掉客户端 `fileHash` 入参；② 接受 `sha1`/`md5` 并同步修改 `verification-document-policy`；③ 小程序内置一份纯 JS SHA-256（增加体积与依赖）。在定下之前页面不实现，避免出现"看起来能传、实际必失败"的入口。
+- **收益（特性开关）**：后端无对应接口（缺口 G7），前端无数据可渲染。
+- **导师 IM（FE-50）**、**职业赛道（FE-51）**、**支付（FE-35）**：各自为独立任务，未纳入 T032。
+- 支付（FE-35）仍待做（T032 未包含）。
