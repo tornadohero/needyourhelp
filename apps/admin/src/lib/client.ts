@@ -100,7 +100,8 @@ export interface AdminClient {
 
   auditLogs(query?: {
     action?: string;
-    resource?: string;
+    /** The API filters by resource **type**, not by id. */
+    resourceType?: string;
     page?: number;
     pageSize?: number;
   }): Promise<AdminAuditLogListResponse>;

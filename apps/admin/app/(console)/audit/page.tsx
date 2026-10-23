@@ -12,7 +12,7 @@ import { auditRow } from '../../../src/lib/views';
 export default async function AuditPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ action?: string; resource?: string }>;
+  searchParams?: Promise<{ action?: string; resourceType?: string }>;
 }) {
   const client = await clientForSession();
   if (client === null) {
@@ -25,7 +25,7 @@ export default async function AuditPage({
   try {
     const list = await client.auditLogs({
       action: params.action,
-      resource: params.resource,
+      resourceType: params.resourceType,
       page: 1,
       pageSize: 50,
     });
@@ -44,7 +44,11 @@ export default async function AuditPage({
           placeholder="动作（如 PROVIDER_APPROVED）"
           defaultValue={params.action ?? ''}
         />
-        <input name="resource" placeholder="资源类型" defaultValue={params.resource ?? ''} />
+        <input
+          name="resourceType"
+          placeholder="资源类型"
+          defaultValue={params.resourceType ?? ''}
+        />
         <button type="submit">筛选</button>
       </form>
 
