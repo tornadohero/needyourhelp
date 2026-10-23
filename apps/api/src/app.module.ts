@@ -7,6 +7,7 @@ import { AccessLogMiddleware } from './common/monitoring/access-log.middleware';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { RequestSizeLimitMiddleware } from './common/security/request-size-limit.middleware';
 import { SecurityHeadersMiddleware } from './common/security/security-headers.middleware';
+import { RedisModule } from './infrastructure/redis/redis.module';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { SecurityModule } from './common/security/security.module';
@@ -35,6 +36,7 @@ import { VerificationModule } from './modules/verification/verification.module';
       envFilePath: ['.env', '../../.env'],
       ignoreEnvFile: false,
     }),
+    RedisModule,
     PrismaModule,
     IdentityModule,
     AuthModule,

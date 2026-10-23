@@ -1,9 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 
+import { REDIS } from '../../infrastructure/redis/redis.module';
+import type { RedisHandle } from '../../infrastructure/redis/redis.client';
 import { InMemoryRateLimiter } from './in-memory-rate-limiter';
+import { RedisRateLimiter } from './redis-rate-limiter';
 import { RequestSizeLimitMiddleware } from './request-size-limit.middleware';
 import { RateLimitInterceptor } from './rate-limit.interceptor';
 import { RATE_LIMITER } from './rate-limit.model';
+import type { RateLimiter } from './rate-limit.model';
 import { SecurityHeadersMiddleware } from './security-headers.middleware';
 
 /**
@@ -18,9 +22,27 @@ import { SecurityHeadersMiddleware } from './security-headers.middleware';
     SecurityHeadersMiddleware,
     RequestSizeLimitMiddleware,
     RateLimitInterceptor,
-    // Single-instance counters today; a Redis-backed limiter implements the same
-    // port for a multi-instance deployment.
-    { provide: RATE_LIMITER, useClass: InMemoryRateLimiter },
+    {
+      // Shared counters when Redis is configured, in-process counters when it is
+      // not: the port is the same either way, so no route knows the difference.
+      provide: RATE_LIMITER,
+      inject: [{ token: REDIS, optional: true }],
+      useFactory: (redis: RedisHandle | undefined): RateLimiter => {
+        const memory = new InMemoryRateLimiter();
+        // No handle bound (a module built without Redis) is the same as no Redis.
+        if (redis === undefined || !redis.enabled || redis.client === null) {
+          return memory;
+        }
+        return new RedisRateLimiter({
+          redis: redis.client,
+          fallback: memory,
+          // Logged once: a limit that is not shared is a deployment note, not a
+          // request-level event.
+          onFallback: (reason) =>
+            new Logger('RateLimit').warn(`falling back to in-process counters: ${reason}`),
+        });
+      },
+    },
   ],
   exports: [
     SecurityHeadersMiddleware,

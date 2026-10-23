@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
 
-import { InMemoryIdempotencyStore } from '../../common/idempotency/in-memory-idempotency.store';
-import { IDEMPOTENCY_STORE } from '../../common/idempotency/idempotency.store';
+import {
+  IDEMPOTENCY_STORE,
+  type IdempotencyStore,
+} from '../../common/idempotency/idempotency.store';
+import { idempotencyStoreFor } from '../../common/idempotency/idempotency-store.factory';
+import { REDIS } from '../../infrastructure/redis/redis.module';
+import type { RedisHandle } from '../../infrastructure/redis/redis.client';
 import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
 import { OrdersModule } from '../orders/orders.module';
@@ -24,8 +29,12 @@ import { PrismaRefundRepository } from './infrastructure/prisma-refund.repositor
   providers: [
     RefundService,
     { provide: REFUND_REPOSITORY, useClass: PrismaRefundRepository },
-    // Single-instance idempotency today; the Redis-backed store is T022.
-    { provide: IDEMPOTENCY_STORE, useClass: InMemoryIdempotencyStore },
+    {
+      provide: IDEMPOTENCY_STORE,
+      inject: [{ token: REDIS, optional: true }],
+      useFactory: (redis: RedisHandle | undefined): IdempotencyStore =>
+        idempotencyStoreFor(redis, 'refunds'),
+    },
   ],
   exports: [RefundService],
 })

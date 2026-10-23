@@ -1,8 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { InMemoryIdempotencyStore } from '../../common/idempotency/in-memory-idempotency.store';
-import { IDEMPOTENCY_STORE } from '../../common/idempotency/idempotency.store';
+import {
+  IDEMPOTENCY_STORE,
+  type IdempotencyStore,
+} from '../../common/idempotency/idempotency.store';
+import { idempotencyStoreFor } from '../../common/idempotency/idempotency-store.factory';
+import { REDIS } from '../../infrastructure/redis/redis.module';
+import type { RedisHandle } from '../../infrastructure/redis/redis.client';
 import { isMockAdapterAllowed } from '../../common/runtime/environment';
 import { AuthModule } from '../auth/auth.module';
 import { OrdersModule } from '../orders/orders.module';
@@ -85,8 +90,14 @@ import { AnalyticsModule } from '../analytics/analytics.module';
         return new PassthroughNotificationVerifier({ environment });
       },
     },
-    // Single-instance idempotency today; the Redis-backed store is T022.
-    { provide: IDEMPOTENCY_STORE, useClass: InMemoryIdempotencyStore },
+    {
+      // Shared idempotency when Redis is configured: a retry that lands on
+      // another instance is still the same call.
+      provide: IDEMPOTENCY_STORE,
+      inject: [{ token: REDIS, optional: true }],
+      useFactory: (redis: RedisHandle | undefined): IdempotencyStore =>
+        idempotencyStoreFor(redis, 'payments'),
+    },
   ],
   // The gateway and the payment repository are exported so the refund context
   // (T016) can reuse the same adapter and read the captured payment.
