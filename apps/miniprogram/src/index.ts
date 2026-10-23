@@ -24,6 +24,7 @@ export {
 } from './core/booking';
 export { describeChild } from './core/children';
 export { describeOrder, describeOrderDetail } from './core/order-view';
+export { describePaymentSession, describePaymentStatus, wechatPaymentParams } from './core/payment';
 export { describeProviderDesk, providerOrdersOnly, providerNextAction } from './core/provider-desk';
 export {
   newServiceDraft,
@@ -40,6 +41,7 @@ export type { MentorContext } from './app-context';
 export * as authService from './services/auth';
 export * as discoveryService from './services/discovery';
 export * as ordersService from './services/orders';
+export * as paymentsService from './services/payments';
 export * as profileService from './services/profile';
 export * as providerDeskService from './services/provider-desk';
 export * as verificationService from './services/verification';

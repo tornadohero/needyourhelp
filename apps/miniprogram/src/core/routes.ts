@@ -51,6 +51,7 @@ export const ROUTES = {
   orderComplete: '/orders/:id/complete',
   paymentSession: '/orders/:id/payment-session',
   paymentStatus: '/orders/:id/payment-status',
+  paymentNotify: '/payments/wechat/notify',
 
   orderRefundRequest: '/orders/:id/refund-request',
   orderRefunds: '/orders/:id/refunds',

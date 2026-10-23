@@ -154,6 +154,34 @@ export function putBinary(
 }
 
 /**
+ * `wx.requestPayment`: the in-app cashier.
+ *
+ * The parameters are the provider's own, passed through untouched. What it
+ * answers is a **hint**: the platform confirms through the notification and the
+ * provider query, so a screen shows the server's status, never this result.
+ */
+export function requestPayment(params: {
+  timeStamp: string;
+  nonceStr: string;
+  package: string;
+  paySign: string;
+  signType?: 'MD5' | 'HMAC-SHA256' | 'RSA';
+}): Promise<{ ok: boolean; message: string }> {
+  return new Promise((resolve) => {
+    wx.requestPayment({
+      timeStamp: params.timeStamp,
+      nonceStr: params.nonceStr,
+      package: params.package,
+      paySign: params.paySign,
+      ...(params.signType === undefined ? {} : { signType: params.signType }),
+      success: () => resolve({ ok: true, message: '' }),
+      fail: (error: { errMsg?: string }) =>
+        resolve({ ok: false, message: error.errMsg ?? '支付未完成' }),
+    });
+  });
+}
+
+/**
  * Navigation and feedback.
  *
  * They live here for the same reason the transport does: a page that calls `wx`

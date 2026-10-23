@@ -44,6 +44,7 @@ describe('ROUTES', () => {
     expect(ROUTES.orderComplete).toBe(ENDPOINTS.orderComplete);
     expect(ROUTES.paymentSession).toBe(ENDPOINTS.paymentSession);
     expect(ROUTES.paymentStatus).toBe(ENDPOINTS.paymentStatus);
+    expect(ROUTES.paymentNotify).toBe(ENDPOINTS.paymentNotify);
     expect(ROUTES.orderRefundRequest).toBe(ENDPOINTS.orderRefundRequest);
     expect(ROUTES.orderRefunds).toBe(ENDPOINTS.orderRefunds);
     expect(ROUTES.orderReviews).toBe(ENDPOINTS.orderReviews);
