@@ -269,6 +269,20 @@ Acceptance:
 - delivery is exactly three commands — accept, start, finish — and a 409 reloads the order instead of retrying.
 - the provider's price is sent as integer minor units; no float reaches the wire.
 
+## T033 Admin console
+The operations console: login, dashboard and the pages operators run the platform from.
+Input: `specs/12-admin-spec.md`, `specs/11-pages-and-ui.md` §Admin Web, `specs/07-permission-spec.md`, `implementation/frontend/admin-page-map.md`, `implementation/frontend/frontend-task-breakdown.md` (FE-01..FE-06, FE-10..FE-13, FE-15, FE-18..FE-22).
+Output:
+- `apps/admin/src/lib/` — env (one setting), transport (`{data}` unwrap, request id, typed errors), session (httpOnly cookie, serialised only), the admin client (every use case), view models, server actions
+- `apps/admin/app/` — login, console shell with a session guard, and pages: dashboard, provider review, verification queue, orders and refunds, users and roles, audit log, feature flags, taxonomy, platform rules
+- unit tests (34 new)
+Acceptance:
+- the access token never reaches the browser: every call happens on the server and the session lives in an httpOnly cookie.
+- a decision always carries a reason, because the server requires one and the audit log is the record of why.
+- a refund carries an `Idempotency-Key` and no invented amount; taxonomy is archived, never deleted; a rule is published by an explicit confirmed command.
+- a `FORBIDDEN` is shown, not hidden, and a platform error is rendered as the platform's sentence — never a stack trace.
+- the dashboard shows only what the API returned: no trend chart, because there is no time series endpoint (G6/G13).
+
 ## CodeBuddy execution instruction
 
 Execute tasks strictly in order unless a dependency is explicitly satisfied.
@@ -283,4 +297,4 @@ For each task:
 7. Report files changed and acceptance results.
 8. Stop before the next task unless the user asks to continue.
 
-Never generate T001-T032 in one uncontrolled pass.
+Never generate T001-T033 in one uncontrolled pass.

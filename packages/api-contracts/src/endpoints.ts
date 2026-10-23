@@ -11,6 +11,7 @@ export const ENDPOINTS = {
   health: '/health',
   consoleLogin: '/auth/console/login',
   adminConsoleCredentials: '/admin/console-credentials',
+  adminConsoleCredential: '/admin/console-credentials/:userId',
   conversationMessages: '/conversations/:id/messages',
   healthReady: '/health/ready',
   auth: {
@@ -61,6 +62,12 @@ export const ENDPOINTS = {
   adminProviderSuspend: '/admin/providers/:id/suspend',
   adminProviderRestore: '/admin/providers/:id/restore',
   adminOrders: '/admin/orders',
+  adminBootstrap: '/admin/bootstrap',
+  adminProviderApprove: '/admin/providers/:id/approve',
+  adminProviderReject: '/admin/providers/:id/reject',
+  /** One role, addressed by name: `DELETE /admin/users/:id/roles/:role`. */
+  adminUserRole: '/admin/users/:id/roles/:role',
+
   adminAuditLogs: '/admin/audit-logs',
   adminFeatureFlags: '/admin/feature-flags',
   adminFeatureFlag: '/admin/feature-flags/:key',
@@ -76,7 +83,14 @@ export const ENDPOINTS = {
   verificationCaseSubmit: '/verification/cases/:id/submit',
   verificationMe: '/verification/me',
   adminVerifications: '/admin/verifications',
+  adminVerificationApprove: '/admin/verifications/:id/approve',
+  adminVerificationReject: '/admin/verifications/:id/reject',
+  /** Short-lived, audited access to a private document (`specs/12`). */
+  adminVerificationDocumentAccess: '/admin/verifications/:id/documents/:documentId/access-url',
+
   taxonomy: '/admin/taxonomy',
+  taxonomyTerm: '/admin/taxonomy/:id',
+  taxonomyTermArchive: '/admin/taxonomy/:id/archive',
 } as const;
 
 export function apiPath(path: string): string {

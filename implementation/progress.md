@@ -41,6 +41,7 @@ A task is only marked `done` when every acceptance criterion in
 | T030 | Mini program provider discovery | done | discovery: GET /providers with normalised filters, paged load-more, provider detail (services/reviews/slots), filter sheet + sort UI, 89 unit tests |
 | T031 | Mini program booking & orders | done | booking (service + the slot's own window + optional child, no money sent), order list/detail, cancel and refund-request commands, child picker consent-gated; 45 new unit tests (134 total) |
 | T032 | Mini program provider desk | done | provider desk (own record, application, submit for review, verification status), service management (create/publish/unpublish), availability management, delivery commands confirm/start/complete; 47 new unit tests (181 total) |
+| T033 | Admin console | done | Next.js operations console: console login (httpOnly session), dashboard, provider review, verification queue with signed document access, orders and idempotent refunds, users and roles, audit log, feature flags, taxonomy (archive only), platform rules (explicit publish); 34 new admin unit tests (36 total) |
 
 ## T002 — Database foundation
 
@@ -2695,3 +2696,42 @@ apps/miniprogram
 - **收益（特性开关）**：后端无对应接口（缺口 G7），前端无数据可渲染。
 - **导师 IM（FE-50）**、**职业赛道（FE-51）**、**支付（FE-35）**：各自为独立任务，未纳入 T032。
 - 支付（FE-35）仍待做（T032 未包含）。
+
+## T033 — 管理后台
+
+对应 `frontend-task-breakdown.md` 的 **FE-01…FE-06（共享基建）** 与 **FE-10、FE-11、FE-12、FE-13、FE-15、FE-18、FE-19、FE-20、FE-21、FE-22**（管理台）。
+FE-14（教师合规）、FE-16（举报队列）、FE-17（申诉终审）不在本任务内，留待下一个管理台任务。
+
+### 交付
+
+| 层 | 文件 |
+|---|---|
+| 基建 | `apps/admin/src/lib/env.ts`（唯一设置：API 地址）、`http.ts`（`{data}` 解包、`X-Request-Id`、类型化错误）、`errors.ts`（错误码 → 文案/动作）、`session.ts`（会话序列化，纯函数） |
+| 客户端 | `apps/admin/src/lib/client.ts`：`/admin/*` 全部用例（dashboard、商家处置、验证处置与证件访问、订单与退款、用户角色、审计日志、开关、类目、规则、控制台凭据） |
+| 视图 | `apps/admin/src/lib/views.ts`：KPI 卡片与各行视图模型、金额/时间/万分比格式化 |
+| 动作 | `apps/admin/src/lib/actions.ts`：全部写操作为 server action（理由必填、退款带幂等键、开关与发布二次确认） |
+| 页面 | `app/login`；`app/(console)/` 下 dashboard、providers、verifications、orders、users、audit、flags、taxonomy、rules，共 12 条路由 |
+| 契约 | `ENDPOINTS` 补齐 `adminBootstrap`、`adminProviderApprove/Reject`、`adminUserRole`、`adminVerificationApprove/Reject/DocumentAccess`、`taxonomyTerm(Archive)`、`adminConsoleCredential` |
+
+### 验收与证据
+
+- **令牌不出服务端**：会话存 httpOnly + sameSite cookie，所有请求在服务端发起（浏览器不持令牌、无 CORS）；`session.test.ts` 覆盖序列化与过期判定。
+- **处置必填理由**：`decideProvider` / `decideVerification` 在客户端就拒绝空理由（服务端同样要求），`client.test.ts` 断言请求体携带 `reason` / `reasonCode`。
+- **证件私有**：查看证件走 `POST /admin/verifications/:id/documents/:documentId/access-url`，固定 `reasonCode:'REVIEW'`，返回短时 URL，不缓存。
+- **退款幂等**：`refundOrder` 必带 `Idempotency-Key`；金额留空即"服务端认定的可退金额"，只有运营明确部分退款时才带 `amountMinor`。
+- **类目只归档**：只有 `archive` 命令，没有删除入口（`specs/01` §Catalog）。
+- **规则显式发布**：草稿可编辑，发布为独立二次确认命令。
+- **403 可见而非隐藏**、**错误显示为平台文案而非堆栈**：`AdminApiError` 统一承载 code/action，`client.test.ts` 断言。
+- **概览不造假**：只展示 `AdminDashboardCounts` 返回字段，无趋势图（后端无时间序列接口，G6/G13）。
+
+### 测试
+
+- 管理台单测 **2 → 36**（客户端 18、视图 13、会话 4、环境 2，含原有 2 条）。
+- `pnpm --filter @mentor/admin build` 通过：12 条路由（`/`、`/login` 与 9 个运营页 + 404）。
+- `format` / `lint` / `typecheck` 全部通过。
+
+### 未做（下一个管理台任务）
+
+- FE-14 教师合规队列（start-review / approve / restrict / reject / suspend，限制范围可配置）。
+- FE-16 举报队列与处置（含调查流转）、FE-17 申诉终审（禁止原处置人执行，前端提前禁用）。
+- 分页控件（当前每页 50，仅首页）、列表筛选（除审计日志外未做）。
