@@ -47,3 +47,10 @@ encrypted by the provider, and its object keys are in the database.
   incident are audited like any other (`AGENTS.md` §13).
 
 - [`ops/redis.md`](redis.md) — Redis: usage, fallback, multi-instance requirement
+- [`ops/release.md`](release.md) — environment matrix, deploy and rollback order, tagging, post-deploy smoke
+
+Smoke after a deploy:
+
+```bash
+API_BASE_URL=https://api.example.com ops/smoke.sh
+```

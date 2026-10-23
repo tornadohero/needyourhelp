@@ -14,9 +14,10 @@ A release ships when every box is ticked. The first block is enforced by CI
 - [ ] `pnpm prisma:seed` — seed works
 - [ ] `pnpm test:integration` — integration tests **and the restore drill**
 - [ ] `pnpm test:e2e` — the eight critical journeys of `specs/14`
+- [ ] `pnpm test:e2e-three` — the three-end journey (api + mini program + admin)
 
 Locally: `pnpm verify` runs the same steps (lint, build, typecheck, unit,
-integration, e2e).
+integration, e2e, three-end).
 
 ## Database
 

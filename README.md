@@ -47,6 +47,7 @@ Running the platform in production (T024):
 5. [`ops/runbook.md`](ops/runbook.md) — procedures for the failures that happen
 6. [`ops/incident-response.md`](ops/incident-response.md) — severity, roles, postmortem
 7. [`ops/release-checklist.md`](ops/release-checklist.md) — the gate before a release ships
+8. [`ops/release.md`](ops/release.md) — environment matrix, deploy order, rollback, smoke
 
 ```bash
 DATABASE_URL=… PGPASSWORD=… BACKUP_DIR=/var/backups/mentor ops/backup.sh
@@ -97,3 +98,11 @@ AUTH_PROVIDER=wechat # real code2Session (needs WECHAT_APP_ID / WECHAT_APP_SECRE
 - Every API endpoint must enforce authentication and authorization as specified.
 - PII fields must have explicit storage/access classification.
 - Tests are part of implementation, not a post-processing step.
+
+## Launch
+
+Getting the platform running locally (T036):
+
+1. [`implementation/launch/environment.md`](implementation/launch/environment.md) — prerequisites, env vars, per-app start, first-run walkthrough, troubleshooting
+2. [`implementation/launch/launch-audit.md`](implementation/launch/launch-audit.md) — can we launch? verdict per environment
+3. [`implementation/launch/launch-progress.md`](implementation/launch/launch-progress.md) — what is left
