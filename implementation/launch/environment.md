@@ -10,7 +10,7 @@
 | Node.js | `>=20`（仓库在 `node 20` 上验证） | 根 `package.json` `engines.node` |
 | pnpm | `>=9`，锁定 `pnpm@9.15.9` | 根 `package.json` `packageManager`、`engines.pnpm` |
 | PostgreSQL | 16（本地实测 `pg_isready` 接受连接） | 需自备；无 Docker Compose 编排 |
-| Redis | **当前不需要** | `REDIS_URL` 仅在 `.env.example` 中出现，代码未使用（限流/幂等为单进程内存实现） |
+| Redis | **可选**（多实例必需） | `REDIS_URL` 已接入（T034）：限流计数与幂等键；未配置时自动降级为单进程内存实现 |
 | 微信开发者工具 | 仅查看小程序时 | `apps/miniprogram` 为占位应用 |
 
 安装依赖：

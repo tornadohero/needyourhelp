@@ -283,6 +283,22 @@ Acceptance:
 - a `FORBIDDEN` is shown, not hidden, and a platform error is rendered as the platform's sentence — never a stack trace.
 - the dashboard shows only what the API returned: no trend chart, because there is no time series endpoint (G6/G13).
 
+## T034 Redis and dependency completeness
+Shared rate-limit counters and idempotency keys, and a dependency set that installs from a clean state.
+Input: `AGENTS.md` §5 (Redis for cache/idempotency/locks), `specs/03-architecture-spec.md` §Idempotency, `specs/13-security-spec.md` §API (rate limiting), `implementation/launch/repository-audit.md` (blocker B3).
+Output:
+- `src/infrastructure/redis/` — the client handle (`REDIS_URL`, optional), narrow command surface, `@Global()` module with a clean shutdown
+- `src/common/security/redis-rate-limiter.ts` — shared fixed window (`INCR`/`EXPIRE`/`TTL`) with an in-process fallback
+- `src/common/idempotency/redis-idempotency.store.ts` — `SET NX` claim, stored answer, fingerprint conflict, claim released when the work fails
+- wiring in `SecurityModule`, `PaymentsModule`, `RefundsModule` (optional injection, so a module still builds alone)
+- `ops/redis.md`, and an `engines`/lockfile check that `pnpm install --frozen-lockfile` still passes
+- unit tests (18)
+Acceptance:
+- with Redis configured, counters and idempotency keys are shared: a retry that lands on another instance is still the same call.
+- without Redis (or when it fails) the platform degrades to the in-process stores and logs it once — never a 500 caused by Redis.
+- a failed idempotent `work` releases its claim, so a retry runs it again; the same key with a different payload is `IDEMPOTENCY_CONFLICT`, never a replay.
+- `pnpm install --frozen-lockfile` passes from the committed lockfile.
+
 ## CodeBuddy execution instruction
 
 Execute tasks strictly in order unless a dependency is explicitly satisfied.
@@ -297,4 +313,4 @@ For each task:
 7. Report files changed and acceptance results.
 8. Stop before the next task unless the user asks to continue.
 
-Never generate T001-T033 in one uncontrolled pass.
+Never generate T001-T034 in one uncontrolled pass.

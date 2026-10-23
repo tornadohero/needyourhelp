@@ -45,3 +45,5 @@ encrypted by the provider, and its object keys are in the database.
   application answers `GET /api/v1/health/ready` with `database: up`.
 - An incident writes to the audit log too: privileged actions taken during an
   incident are audited like any other (`AGENTS.md` §13).
+
+- [`ops/redis.md`](redis.md) — Redis: usage, fallback, multi-instance requirement

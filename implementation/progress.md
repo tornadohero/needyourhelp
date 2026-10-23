@@ -42,6 +42,7 @@ A task is only marked `done` when every acceptance criterion in
 | T031 | Mini program booking & orders | done | booking (service + the slot's own window + optional child, no money sent), order list/detail, cancel and refund-request commands, child picker consent-gated; 45 new unit tests (134 total) |
 | T032 | Mini program provider desk | done | provider desk (own record, application, submit for review, verification status), service management (create/publish/unpublish), availability management, delivery commands confirm/start/complete; 47 new unit tests (181 total) |
 | T033 | Admin console | done | Next.js operations console: console login (httpOnly session), dashboard, provider review, verification queue with signed document access, orders and idempotent refunds, users and roles, audit log, feature flags, taxonomy (archive only), platform rules (explicit publish); 34 new admin unit tests (36 total) |
+| T034 | Redis & dependency completeness | done | ioredis-backed rate limiter (INCR/EXPIRE/TTL) and idempotency store (SET NX claim + stored answer) with in-process fallback; optional DI so modules build alone; `ops/redis.md`; lockfile still `install --frozen-lockfile` clean; 18 new unit tests (445 api) |
 
 ## T002 — Database foundation
 
@@ -2735,3 +2736,38 @@ FE-14（教师合规）、FE-16（举报队列）、FE-17（申诉终审）不�
 - FE-14 教师合规队列（start-review / approve / restrict / reject / suspend，限制范围可配置）。
 - FE-16 举报队列与处置（含调查流转）、FE-17 申诉终审（禁止原处置人执行，前端提前禁用）。
 - 分页控件（当前每页 50，仅首页）、列表筛选（除审计日志外未做）。
+
+## T034 — Redis 与依赖完善
+
+对应仓库审计的阻塞项 **B3（Redis 未接入）**，以及工程基线中的依赖一致性要求。
+
+### 交付
+
+| 层 | 文件 |
+|---|---|
+| 客户端 | `apps/api/src/infrastructure/redis/redis.client.ts`：`REDIS_URL` 解析（空/`disabled` 即不启用）、ioredis 句柄、窄命令面 `RedisLike`、命名空间 `mentor:*`、`onModuleDestroy` 优雅关闭 |
+| 限流 | `apps/api/src/common/security/redis-rate-limiter.ts`：共享固定窗口（`INCR` + 首次 `EXPIRE` + `TTL` 给出 Retry-After），失败降级到 `InMemoryRateLimiter` |
+| 幂等 | `apps/api/src/common/idempotency/redis-idempotency.store.ts` + `idempotency-store.factory.ts`：`SET NX EX` 抢占 + 结果落库重放、指纹不一致 → `IDEMPOTENCY_CONFLICT`、`work` 失败即释放声明、并发重试短暂等待后拒绝（绝不重复执行） |
+| 接线 | `RedisModule`（`@Global()`，提供 `REDIS` 句柄）；`SecurityModule`、`PaymentsModule`、`RefundsModule` 以 **optional 注入** 使用，模块单独构建时自动回到内存实现 |
+| 运维 | `ops/redis.md`（用途、键与 TTL、降级行为、多实例要求、验证方法），`ops/README.md` 与 `implementation/launch/environment.md` 同步 |
+| 依赖 | 新增 `ioredis ^6`；根 `package.json` 保持 `engines.node >=20` 与 `packageManager`，`pnpm install --frozen-lockfile` 通过 |
+
+### 验收与证据
+
+- **共享计数**：两个实例/重启后读同一计数器（单测以 fake Redis 断言 `INCR`/`EXPIRE`/`TTL` 序列）。
+- **共享幂等**：首次执行并落结果，重试回放同一答案（单测断言 `replayed: true` 且第二次 `work` 未执行）。
+- **失败即释放**：`work` 抛错时 `DEL` 声明，重试能再次执行（单测）。
+- **同键异载 = 冲突**：指纹不同抛 `IdempotencyConflictError`，绝不回放无关答案（单测）。
+- **Redis 不可用不成灾**：`enableOfflineQueue: false` + 有限重试（>3 次放弃），失败降级并只记一次告警；本地 `.env` 配了 `REDIS_URL` 但无 Redis 服务时，集成 282 与 E2E 8 全部通过且不挂起。
+- **依赖可复现**：`pnpm install --frozen-lockfile` 通过（锁文件与清单一致）。
+
+### 测试
+
+- 新增 18 个单测（限流 5、幂等 7、客户端 6），api 单测 **427 → 445**。
+- 集成 **46 文件 / 282 测试**全部通过；E2E **8/8** 通过；`format`/`lint`/`typecheck` 通过。
+
+### 未做
+
+- 分布式锁仍未使用 Redis（可用性占用是 PostgreSQL 事务内条件更新，T011）；有意如此。
+- 未引入 Redis 缓存与队列；未测试 sentinel/cluster 拓扑。
+- 未做"连真实 Redis 的集成测试"（本机无 Redis 服务）；以 fake 断言 + `ops/redis.md` 的人工验证步骤替代。
