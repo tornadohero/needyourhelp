@@ -43,7 +43,8 @@ export interface RequestUploadUrlInput {
   /** Optional original file name; stored encrypted, never exposed. */
   filename?: string | null;
   /** SHA-256 digest of the file: `verification_documents.file_hash` is required. */
-  fileHash: string;
+  /** Optional: when absent the server records the hash of the bytes it receives. */
+  fileHash?: string | null;
 }
 
 export interface DocumentUploadTarget {
@@ -142,7 +143,10 @@ export class VerificationService {
     if (input.byteSize > this.maxDocumentBytes) {
       throw verificationInvalidState('The document exceeds the maximum accepted size.');
     }
-    if (!isSha256Hex(input.fileHash)) {
+    // The hash is the server's record, not the client's claim: absent means
+    // "compute it from the uploaded bytes", present means "it must be a digest".
+    const fileHash = input.fileHash?.trim().toLowerCase() ?? null;
+    if (fileHash !== null && !isSha256Hex(fileHash)) {
       throw verificationInvalidState('The file hash must be a SHA-256 hex digest.');
     }
 
@@ -157,7 +161,7 @@ export class VerificationService {
       caseId: verificationCase.id,
       documentType: input.documentType,
       storageKey,
-      fileHash: input.fileHash,
+      fileHash,
       encryptedMetadata: this.cipher.seal({
         filename: input.filename ?? null,
         contentType,

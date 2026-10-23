@@ -9,7 +9,10 @@ import { AllExceptionsFilter } from '../../src/common/filters/all-exceptions.fil
 import { ResponseEnvelopeInterceptor } from '../../src/common/interceptors/response-envelope.interceptor';
 import { OBJECT_STORAGE_GATEWAY } from '../../src/modules/verification/domain/object-storage.gateway';
 import { LOCAL_OBJECT_STORE } from '../../src/modules/verification/domain/object-store';
+import { VERIFICATION_CASE_REPOSITORY } from '../../src/modules/verification/domain/verification-case.repository';
 import { VERIFICATION_DOCUMENT_MAX_BYTES } from '../../src/modules/verification/domain/verification-document-policy';
+import { PrismaVerificationCaseRepository } from '../../src/modules/verification/infrastructure/prisma-verification-case.repository';
+import { PrismaService } from '../../src/infrastructure/prisma/prisma.service';
 import { FilesController } from '../../src/modules/verification/http/files.controller';
 import { MockObjectStorageGateway } from '../../src/modules/verification/infrastructure/mock-object-storage.gateway';
 import { createTestPrismaService, describeWithDatabase } from './helpers/test-database';
@@ -46,6 +49,9 @@ describeWithDatabase('verification document object URLs', () => {
         { provide: OBJECT_STORAGE_GATEWAY, useValue: storage },
         { provide: LOCAL_OBJECT_STORE, useExisting: OBJECT_STORAGE_GATEWAY },
         { provide: VERIFICATION_DOCUMENT_MAX_BYTES, useValue: 10 * 1024 * 1024 },
+        // The controller records the hash of the bytes it receives.
+        { provide: VERIFICATION_CASE_REPOSITORY, useClass: PrismaVerificationCaseRepository },
+        { provide: PrismaService, useValue: prisma },
       ],
     }).compile();
 

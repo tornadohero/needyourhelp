@@ -1,10 +1,12 @@
 import type { Request, Response } from 'express';
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { FilesController } from '../../../src/modules/verification/http/files.controller';
 import { MockObjectStorageGateway } from '../../../src/modules/verification/infrastructure/mock-object-storage.gateway';
 import { Reflector } from '@nestjs/core';
 import { VerificationModule } from '../../../src/modules/verification/verification.module';
+import { FakeVerificationCaseRepository } from './fakes';
 
 const SECRET = 'unit-object-secret';
 
@@ -64,7 +66,7 @@ function responseRecorder(): {
 describe('FilesController', () => {
   it('stores and serves the exact bytes of a signed upload', async () => {
     const storage = gateway();
-    const controller = new FilesController(storage);
+    const controller = new FilesController(storage, new FakeVerificationCaseRepository());
 
     const upload = await storage.createUploadUrl({
       key: 'verification/case-1/doc-1',
@@ -100,9 +102,44 @@ describe('FilesController', () => {
     expect(record.statusCode).toBe(200);
   });
 
+  it('records the SHA-256 of the bytes that arrived', async () => {
+    const storage = gateway();
+    const cases = new FakeVerificationCaseRepository();
+    await cases.addDocument({
+      caseId: 'case-1',
+      documentType: 'ID_CARD',
+      storageKey: 'verification/case-1/doc-1',
+      fileHash: null,
+    });
+    const document = [...cases.documents.values()][0]!;
+    const controller = new FilesController(storage, cases);
+
+    const upload = await storage.createUploadUrl({
+      // The signed URL binds the key, and the key is built from the document id.
+      key: `verification/case-1/${document.id}`,
+      contentType: 'image/png',
+      contentLength: 5,
+    });
+    const { expires, signature } = queryOf(upload.url);
+    const bytes = Buffer.from([1, 2, 3, 4, 5]);
+
+    await controller.upload(
+      'case-1',
+      document.id,
+      expires,
+      signature,
+      requestWith(bytes, 'image/png'),
+    );
+
+    // What the server stored is what the server hashed.
+    expect(cases.documents.get(document.id)?.fileHash).toBe(
+      createHash('sha256').update(bytes).digest('hex'),
+    );
+  });
+
   it('refuses a tampered, expired or replayed URL', async () => {
     const storage = gateway();
-    const controller = new FilesController(storage);
+    const controller = new FilesController(storage, new FakeVerificationCaseRepository());
     const upload = await storage.createUploadUrl({
       key: 'verification/case-2/doc-2',
       contentType: 'image/jpeg',
@@ -163,7 +200,7 @@ describe('FilesController', () => {
 
   it('enforces the content-type whitelist and the size ceiling', async () => {
     const storage = gateway(8);
-    const controller = new FilesController(storage);
+    const controller = new FilesController(storage, new FakeVerificationCaseRepository());
 
     const html = await storage.createUploadUrl({
       key: 'verification/case-3/doc-3',
@@ -213,7 +250,7 @@ describe('FilesController', () => {
   });
 
   it('answers 404 when no local store is bound (a real bucket is in use)', async () => {
-    const controller = new FilesController(undefined);
+    const controller = new FilesController(undefined, new FakeVerificationCaseRepository());
 
     await expect(
       controller.upload(

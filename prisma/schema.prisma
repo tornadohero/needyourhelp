@@ -631,7 +631,9 @@ model VerificationDocument {
   caseId            String                   @map("case_id") @db.Uuid
   documentType      VerificationDocumentType @map("document_type")
   storageKey        String                   @map("storage_key")
-  fileHash          String                   @map("file_hash")
+  /// SHA-256 of the uploaded bytes. Recorded by the server when the object
+  /// arrives, so it is absent between "upload URL issued" and "upload done".
+  fileHash          String?                  @map("file_hash")
   encryptedMetadata String?                  @map("encrypted_metadata")
   expiresAt         DateTime?                @map("expires_at")
   createdAt         DateTime                 @default(now()) @map("created_at")

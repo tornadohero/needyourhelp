@@ -68,10 +68,18 @@ export class RequestUploadUrlDto {
   @MaxLength(255)
   readonly filename?: string;
 
-  /** SHA-256 of the file: `verification_documents.file_hash` is required. */
+  /**
+   * Optional SHA-256 of the file.
+   *
+   * A WeChat mini program cannot compute one (`wx.getFileInfo` offers md5 and
+   * sha1 only), so the hash is not a client duty: when it is absent the server
+   * records it from the bytes it receives (`specs/13` §File upload). When a
+   * client does send one, it must still be a SHA-256 hex digest.
+   */
+  @IsOptional()
   @IsString()
   @Matches(/^[0-9a-f]{64}$/i)
-  readonly fileHash!: string;
+  readonly fileHash?: string;
 }
 
 /**

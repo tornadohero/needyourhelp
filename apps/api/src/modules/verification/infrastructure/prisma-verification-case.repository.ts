@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { isUuid } from '../../catalog/domain/taxonomy-policy';
+
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import type {
   CreateVerificationCaseInput,
@@ -107,6 +109,22 @@ export class PrismaVerificationCaseRepository implements VerificationCaseReposit
     const row = await this.prisma.verificationDocument.findUnique({ where: { id: documentId } });
     return row ? mapDocument(row) : null;
   }
+
+  async setDocumentFileHash(documentId: string, fileHash: string): Promise<boolean> {
+    // The id comes from a signed path, and a signed path can name a document
+    // that does not exist: refuse instead of letting the driver answer 500.
+    if (!isUuid(documentId)) {
+      return false;
+    }
+
+    // Conditional on the row still having no hash: the first upload of a
+    // document is the one whose bytes the hash describes.
+    const updated = await this.prisma.verificationDocument.updateMany({
+      where: { id: documentId, fileHash: { equals: null } },
+      data: { fileHash },
+    });
+    return updated.count > 0;
+  }
 }
 
 type VerificationCaseRow = {
@@ -128,7 +146,7 @@ type VerificationDocumentRow = {
   caseId: string;
   documentType: VerificationDocumentType;
   storageKey: string;
-  fileHash: string;
+  fileHash: string | null;
   encryptedMetadata: string | null;
   expiresAt: Date | null;
   createdAt: Date;

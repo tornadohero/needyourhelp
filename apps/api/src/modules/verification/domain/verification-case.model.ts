@@ -62,8 +62,12 @@ export interface VerificationDocument {
   caseId: string;
   documentType: VerificationDocumentType;
   storageKey: string;
-  /** SHA-256 of the uploaded file: `verification_documents.file_hash` is required. */
-  fileHash: string;
+  /**
+   * SHA-256 of the uploaded bytes, recorded by the server when the object
+   * arrives: `null` until then. A client that cannot hash (a WeChat mini
+   * program) is not asked to (`specs/13-security-spec.md` §File upload).
+   */
+  fileHash: string | null;
   encryptedMetadata: string | null;
   expiresAt: Date | null;
   createdAt: Date;
@@ -87,7 +91,8 @@ export interface CreateVerificationDocumentInput {
   caseId: string;
   documentType: VerificationDocumentType;
   storageKey: string;
-  fileHash: string;
+  /** Optional: recorded by the server when the object is uploaded. */
+  fileHash?: string | null;
   encryptedMetadata?: string | null;
   expiresAt?: Date | null;
 }

@@ -109,6 +109,26 @@ describe('VerificationService', () => {
     expect(context.storage.uploads[0]?.key).toBe(document.storageKey);
   });
 
+  it('accepts an upload without a file hash: the server records it from the bytes', async () => {
+    const userId = await newProvider(context);
+    const created = await context.service.createCase(userId, { verificationType: 'IDENTITY' });
+
+    // A WeChat mini program cannot compute SHA-256, so the hash is optional and
+    // the document stays unhashed until the object arrives.
+    const { document } = await context.service.requestUploadUrl(userId, created.id, {
+      documentType: 'ID_CARD',
+      contentType: 'image/jpeg',
+      byteSize: 2048,
+    });
+
+    expect(document.fileHash).toBeNull();
+
+    const recorded = await context.cases.setDocumentFileHash(document.id, 'a'.repeat(64));
+    expect(recorded).toBe(true);
+    // The first upload is the one the hash describes: a second write is ignored.
+    expect(await context.cases.setDocumentFileHash(document.id, 'b'.repeat(64))).toBe(false);
+  });
+
   it('refuses disallowed content types and over-sized files', async () => {
     const userId = await newProvider(context);
     const created = await context.service.createCase(userId, { verificationType: 'IDENTITY' });

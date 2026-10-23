@@ -96,7 +96,7 @@ export class FakeVerificationCaseRepository implements VerificationCaseRepositor
       caseId: input.caseId,
       documentType: input.documentType,
       storageKey: input.storageKey,
-      fileHash: input.fileHash,
+      fileHash: input.fileHash ?? null,
       encryptedMetadata: input.encryptedMetadata ?? null,
       expiresAt: input.expiresAt ?? null,
       createdAt: new Date(),
@@ -107,6 +107,15 @@ export class FakeVerificationCaseRepository implements VerificationCaseRepositor
 
   async listDocuments(caseId: string): Promise<VerificationDocument[]> {
     return [...this.documents.values()].filter((document) => document.caseId === caseId);
+  }
+
+  async setDocumentFileHash(documentId: string, fileHash: string): Promise<boolean> {
+    const document = this.documents.get(documentId);
+    if (!document || document.fileHash !== null) {
+      return false;
+    }
+    this.documents.set(documentId, { ...document, fileHash });
+    return true;
   }
 
   async findDocumentById(documentId: string): Promise<VerificationDocument | null> {

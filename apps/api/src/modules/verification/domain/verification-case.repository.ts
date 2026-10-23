@@ -43,4 +43,13 @@ export interface VerificationCaseRepository {
   listDocuments(caseId: string): Promise<VerificationDocument[]>;
 
   findDocumentById(documentId: string): Promise<VerificationDocument | null>;
+
+  /**
+   * Record the hash of the bytes that actually arrived.
+   *
+   * Returns `false` when there is nothing to record (unknown document, or a hash
+   * already set): the upload itself still succeeded, and a second write would
+   * only be noise (`specs/13` §File upload).
+   */
+  setDocumentFileHash(documentId: string, fileHash: string): Promise<boolean>;
 }

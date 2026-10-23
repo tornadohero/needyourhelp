@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { Request, Response } from 'express';
 import {
   Controller,
@@ -12,6 +13,8 @@ import {
   Res,
 } from '@nestjs/common';
 
+import { VERIFICATION_CASE_REPOSITORY } from '../domain/verification-case.repository';
+import type { VerificationCaseRepository } from '../domain/verification-case.repository';
 import { LOCAL_OBJECT_STORE } from '../domain/object-store';
 import type { LocalObjectStore } from '../domain/object-store';
 import {
@@ -41,6 +44,7 @@ import { throwAsHttpError } from './verification-error-translator';
 export class FilesController {
   constructor(
     @Inject(LOCAL_OBJECT_STORE) private readonly store: LocalObjectStore | undefined,
+    @Inject(VERIFICATION_CASE_REPOSITORY) private readonly cases: VerificationCaseRepository,
     @Optional()
     @Inject(VERIFICATION_DOCUMENT_MAX_BYTES)
     private readonly maxBytes?: number,
@@ -77,6 +81,14 @@ export class FilesController {
         contentType,
         bytes,
       });
+
+      // The integrity record is made from the bytes that arrived, not from a
+      // value the client asserted: a client that cannot hash (a WeChat mini
+      // program) uploads the same way as one that can.
+      await this.cases.setDocumentFileHash(
+        documentId,
+        createHash('sha256').update(bytes).digest('hex'),
+      );
 
       return { key: objectKey(caseId, documentId), byteSize: bytes.length, contentType };
     });
