@@ -13,5 +13,8 @@
     "@types/wechat-miniprogram": "^3.4.10",
     "typescript": "^5.6.3",
     "vitest": "^2.1.0"
+  },
+  "exports": {
+    ".": "./src/index.ts"
   }
 }
