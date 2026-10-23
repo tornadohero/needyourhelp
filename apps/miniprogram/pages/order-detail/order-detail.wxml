@@ -55,6 +55,9 @@
       <button class="button" loading="{{acting}}" bindtap="onRequestRefund">申请退款</button>
     </block>
 
-    <button wx:if="{{order.canPay}}" class="button" disabled>待支付</button>
+    <!-- Paying is its own screen: service, duration, price, total, order number. -->
+    <button wx:if="{{order.canPay}}" class="button" type="primary" bindtap="onPay">
+      去支付（{{order.totalText}}）
+    </button>
   </block>
 </view>

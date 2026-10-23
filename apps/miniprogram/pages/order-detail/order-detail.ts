@@ -2,7 +2,7 @@ import { ensureContext } from '../../src/app-context';
 import type { MentorContext } from '../../src/app-context';
 import { errorMessageOf } from '../../src/core/errors';
 import type { OrderDetailView, RefundRowView } from '../../src/core/order-view';
-import { confirm, showToast } from '../../src/platform/wechat';
+import { confirm, navigateTo, showToast } from '../../src/platform/wechat';
 import { cancelOrder, orderDetail, requestRefund } from '../../src/services/orders';
 
 /**
@@ -114,6 +114,11 @@ const pageOptions = {
       this.setData({ acting: false, notice: errorMessageOf(error) });
       await this.load(this.orderId);
     }
+  },
+
+  /** Open the money screen: the order is waiting to be paid for. */
+  onPay(this: PageInstance): void {
+    navigateTo(`/pages/payment/payment?id=${encodeURIComponent(this.orderId)}`);
   },
 
   async onRetry(this: PageInstance): Promise<void> {

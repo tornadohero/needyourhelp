@@ -1,0 +1,59 @@
+<view class="page">
+  <view class="title">支付</view>
+
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <block wx:elif="{{order}}">
+    <!-- Money screen: service, duration, unit price, total, order number. -->
+    <view class="card">
+      <view class="row"><text class="label">服务</text><text>{{order.title}}</text></view>
+      <view class="row"><text class="label">时长</text><text>{{order.durationText}}</text></view>
+      <view class="row"><text class="label">单价</text><text>{{order.unitPriceText}}</text></view>
+      <view class="row"><text class="label">应付</text><text class="total">{{order.totalText}}</text></view>
+      <view class="row"><text class="label">订单号</text><text>{{order.orderNo}}</text></view>
+      <view wx:if="{{order.timeText}}" class="row">
+        <text class="label">时间</text><text>{{order.timeText}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{status}}" class="card">
+      <view class="row">
+        <text class="label">支付状态</text><text>{{status.paymentText}}</text>
+      </view>
+      <view wx:if="{{status.paidText}}" class="hint">到账时间：{{status.paidText}}</view>
+      <view class="hint">以平台结果为准，不以本机回调为准。</view>
+    </view>
+
+    <view wx:if="{{session}}" class="card">
+      <view class="row"><text class="label">渠道</text><text>{{session.providerText}}</text></view>
+      <view class="row"><text class="label">金额</text><text>{{session.amountText}}</text></view>
+      <view wx:if="{{session.reused}}" class="hint">复用了已存在的支付单。</view>
+    </view>
+
+    <view wx:if="{{notice}}" class="notice">{{notice}}</view>
+
+    <button
+      wx:if="{{order.canPay}}"
+      class="button"
+      type="primary"
+      loading="{{paying}}"
+      bindtap="onPay"
+    >立即支付</button>
+
+    <!-- Only the local adapter: there is no cashier to open without a signature. -->
+    <button
+      wx:if="{{session.isMock}}"
+      class="button"
+      size="mini"
+      loading="{{paying}}"
+      bindtap="onSimulate"
+    >模拟支付（仅本地）</button>
+
+    <view class="hint">退款规则：未开始的订单可申请退款，由平台审核后原路退回。</view>
+  </block>
+</view>
