@@ -329,6 +329,22 @@ Acceptance:
 - the mock seam refuses to run for any provider other than `MOCK`, so it cannot become a production path.
 - a timeout while polling is reported as "the server still does not know", not as failure.
 
+## T036 Launch documentation and release preparation
+Make the platform startable from the documentation alone, and make a release a procedure instead of a memory.
+Input: `specs/03-architecture-spec.md` §Deployment / §Environments / §Feature flags, `specs/13-security-spec.md` (secrets), `implementation/launch/repository-audit.md` (blockers B1–B9), `ops/release-checklist.md` (T024), `implementation/frontend/frontend-task-breakdown.md` (what is still missing).
+Output:
+- `implementation/launch/launch-audit.md` — can we launch? A verdict per environment with the evidence behind it, and the blockers that remain (L1–L6)
+- `implementation/launch/environment.md` — refreshed: current per-app start, the admin console's `ADMIN_API_BASE_URL`, a **first-run walkthrough** from an empty database to a refunded order, and a troubleshooting table
+- `implementation/launch/launch-progress.md` — refreshed: which audit blockers are resolved and what is left
+- `ops/release.md` — environment variable matrix (required / secret / optional), build and deploy order, smoke, tagging, rollback
+- `ops/smoke.sh` — post-deploy probe: `/health`, `/health/ready` with `database: up`, and an optional login probe; non-zero exit on failure
+- `ops/release-checklist.md` and the READMEs — the three-end suite added to the automated gate; the launch docs linked
+Acceptance:
+- a first-time reader can start all three ends and complete a journey by following `environment.md` alone; the walkthrough's executable form (`pnpm test:e2e-three`) passes.
+- every secret-bearing variable is marked as such, and the release doc says a `replace-me-*` value in production stops the release.
+- the deploy order states why migrations go first and why the mini program goes last (old and new clients coexist).
+- the smoke script fails loudly: verified against a live API (exit 0) and against a dead port (exit 1, two failed checks).
+
 ## CodeBuddy execution instruction
 
 Execute tasks strictly in order unless a dependency is explicitly satisfied.
@@ -343,4 +359,4 @@ For each task:
 7. Report files changed and acceptance results.
 8. Stop before the next task unless the user asks to continue.
 
-Never generate T001-T035b in one uncontrolled pass.
+Never generate T001-T036 in one uncontrolled pass.

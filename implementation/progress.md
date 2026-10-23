@@ -45,6 +45,7 @@ A task is only marked `done` when every acceptance criterion in
 | T034 | Redis & dependency completeness | done | ioredis-backed rate limiter (INCR/EXPIRE/TTL) and idempotency store (SET NX claim + stored answer) with in-process fallback; optional DI so modules build alone; `ops/redis.md`; lockfile still `install --frozen-lockfile` clean; 18 new unit tests (445 api) |
 | T035 | Three-end E2E | done | `apps/e2e`: real API process on a disposable DB, driven by the shipping mini program modules and the shipping admin client over HTTP — apply/evidence/approve/publish/discover/book/pay/deliver/idempotent refund/audit; 7 tests |
 | T035b | Parent payment screen (FE-35) | done | money screen + session/status/polling use cases, `wx.requestPayment` behind the platform adapter, local-only mock gateway seam; 18 new unit tests (214 miniprogram) |
+| T036 | Launch docs & release preparation | done | `launch-audit.md`（能否启动：本地 READY / 生产 READY AFTER FIXES，L1–L6）、`environment.md` 首次运行走查与排障、`launch-progress.md` 刷新、`ops/release.md`（环境变量矩阵/部署顺序/回滚/标签策略）、`ops/smoke.sh`（发布后冒烟，实测通过与失败路径）、发布清单补入三端套件 |
 
 ## T002 — Database foundation
 
@@ -2843,3 +2844,31 @@ FE-14（教师合规）、FE-16（举报队列）、FE-17（申诉终审）不�
 
 - 真实微信支付联调（需要商户号与真机；`wx.requestPayment` 已就位，参数由服务端下发）。
 - 支付失败后的重试策略（目前为重新发起会话，平台保证会话复用 `reused`）。
+
+## T036 — 启动文档与发布准备
+
+### 交付
+
+| 项 | 文件 |
+|---|---|
+| 启动审计 | `implementation/launch/launch-audit.md`（**此前为 0 字节**）：三端实测状态、已解决阻塞项（B1–B4/B6/B8/B9）、剩余发布阻塞（L1–L6：真实 appid、真实微信支付、私有对象存储、外部拨测与指标、CI 跑三端、多实例 Redis）、发布前必须替换的占位值 |
+| 启动手册 | `implementation/launch/environment.md`：刷新（管理台已可用、小程序 214 单测与 13 页、Redis 可选），新增 **首次运行走查**（空库 → 探针 → bootstrap 首位管理员 → 入驻与审核 → 发布与预约 → 支付与交付 → 退款 → 审计）与 **排障表** |
+| 进度追踪 | `implementation/launch/launch-progress.md`：B1/B2/B3 已解决，B7 转为 L4，G4 剩余项（`.gitattributes` 与提交前密钥扫描）明确列出 |
+| 发布准备 | `ops/release.md`：环境变量矩阵（必填/密钥/可选）、构建与部署顺序（迁移 → 后端 → 管理台 → 小程序 → 冒烟 → 观察）、冒烟、版本与标签策略、回滚（先回滚应用、数据层最后） |
+| 冒烟脚本 | `ops/smoke.sh`：`/health`、`/health/ready`（须 `database:"up"`）、可选登录探测；失败非 0 退出 |
+| 一致性 | `ops/release-checklist.md` 的 CI 门禁补入 `pnpm test:e2e-three`；`ops/README.md` 与根 `README.md` 增加索引（根 README 新增 Launch 章节） |
+
+### 验证（都实跑过）
+
+- `bash -n ops/smoke.sh` 语法通过；对**真实 API**：`GET /health 200`、`/health/ready` 且 `database:"up"`、`POST /auth/wechat/login 201` → 退出码 **0**。
+- 对**不可达端口**：两项失败并打印原因，退出码 **1**（"发布后冒烟会真的拦住"）。
+- 冒烟产生的探测账号已清理，开发库回到 7 用户 / 0 会话 / 14 角色。
+- `pnpm test:e2e-three` 7/7 —— 即文档里首次运行走查的可执行版本。
+- `format` / `lint` / `typecheck` 通过；全仓库单测 715 通过。
+
+### 未做
+
+- `.gitattributes` 与提交前密钥扫描钩子（G4 遗留）。
+- 真实 appid / 微信支付 / 对象存储（L1–L3），需账号与资质。
+- 外部拨测与 `/metrics`（L4）。
+- CI 上实跑三端套件（L5）：本地已通，CI 未验证。
