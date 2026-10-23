@@ -35,6 +35,31 @@
     <button wx:if="{{desk.canSubmit}}" class="button" type="primary" loading="{{acting}}" bindtap="onSubmitForReview">
       提交审核
     </button>
+    <button class="button" bindtap="onOpenVerification">身份与学历验证</button>
+
+    <block wx:if="{{editing}}">
+      <view class="card">
+        <view class="section">编辑资料（整表替换）</view>
+        <input class="input" placeholder="对外展示的姓名" value="{{editName}}" data-field="editName" bindinput="onEditInput" />
+        <input class="input" placeholder="一句话介绍" value="{{editHeadline}}" data-field="editHeadline" bindinput="onEditInput" />
+        <input class="input" placeholder="城市编号，如 BEIJING" value="{{editCity}}" data-field="editCity" bindinput="onEditInput" />
+        <textarea class="note" placeholder="个人介绍" value="{{editBio}}" data-field="editBio" bindinput="onEditInput" />
+
+        <view class="section">辅导身份</view>
+        <view
+          class="option {{item.on ? 'option-on' : ''}}"
+          wx:for="{{editCapabilities}}"
+          wx:key="type"
+          data-type="{{item.type}}"
+          bindtap="onToggleEditCapability"
+        >{{item.label}}</view>
+
+        <!-- Left empty on purpose: a replacement clears what the form omits. -->
+        <button class="button" type="primary" loading="{{acting}}" bindtap="onSaveEdit">保存资料</button>
+        <button class="button" size="mini" bindtap="onCancelEdit">取消</button>
+      </view>
+    </block>
+    <button wx:else class="button" bindtap="onStartEdit">编辑资料</button>
     <button class="button" bindtap="onOpenServices">服务管理</button>
     <button class="button" bindtap="onOpenSlots">可预约时段</button>
     <button class="button" bindtap="onOpenOrders">我的接单</button>

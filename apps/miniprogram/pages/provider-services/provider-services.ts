@@ -5,6 +5,7 @@ import type { ServiceManageRowView } from '../../src/core/provider-desk';
 import {
   SERVICE_PROBLEM_TEXTS,
   ServiceInvalidError,
+  minorToYuan,
   newServiceDraft,
   withDescription,
   withDuration,
@@ -18,6 +19,7 @@ import {
   createService,
   listMyServices,
   publishService,
+  replaceService,
   unpublishService,
 } from '../../src/services/provider-desk';
 
@@ -41,6 +43,8 @@ interface ProviderServicesData {
   durationMinutes: number;
   priceYuan: string;
   subjectText: string;
+  /** The service being edited; `null` while the form creates a new one. */
+  editingId: string;
 }
 
 type PageInstance = WechatMiniprogram.Page.Instance<
@@ -50,6 +54,7 @@ type PageInstance = WechatMiniprogram.Page.Instance<
   context: MentorContext;
   draft: ServiceDraft;
   load(): Promise<void>;
+  onCancelEdit(): void;
   command(
     event: WechatMiniprogram.TouchEvent,
     run: (context: MentorContext, serviceId: string) => Promise<ServiceManageRowView>,
@@ -69,6 +74,7 @@ const pageOptions = {
     durationMinutes: 60,
     priceYuan: '',
     subjectText: '',
+    editingId: '',
   },
 
   context: ensureContext(),
@@ -113,6 +119,67 @@ const pageOptions = {
     const minutes = Number(event.currentTarget.dataset.minutes ?? 0);
     this.draft = withDuration(this.draft, minutes);
     this.setData({ durationMinutes: minutes });
+  },
+
+  /**
+   * Load a service into the form for editing.
+   *
+   * Editing is a PUT replacement, so the form is filled completely: what it
+   * leaves empty is cleared when saved.
+   */
+  onEditService(this: PageInstance, event: WechatMiniprogram.TouchEvent): void {
+    const serviceId = String(event.currentTarget.dataset.id ?? '');
+    const service = this.data.services.find((item) => item.id === serviceId);
+    if (!service) {
+      return;
+    }
+
+    this.draft = withSubjectCodes(
+      withPriceYuan(
+        withDuration(withTitle(newServiceDraft(), service.title), service.durationMinutes),
+        minorToYuan(service.priceMinor),
+      ),
+      service.subjectCodes,
+    );
+    this.setData({
+      editingId: serviceId,
+      title: service.title,
+      description: service.description,
+      priceYuan: minorToYuan(service.priceMinor),
+      subjectText: service.subjectCodes.join(','),
+      problem: '',
+    });
+  },
+
+  onCancelEdit(this: PageInstance): void {
+    this.draft = withDuration(newServiceDraft(), 60);
+    this.setData({
+      editingId: '',
+      title: '',
+      description: '',
+      priceYuan: '',
+      subjectText: '',
+    });
+  },
+
+  async onSaveEdit(this: PageInstance): Promise<void> {
+    this.setData({ creating: true, problem: '' });
+    try {
+      await replaceService(this.context, this.data.editingId, this.draft);
+      this.setData({ creating: false, notice: '服务已更新。' });
+      this.onCancelEdit();
+      await this.load();
+    } catch (error) {
+      if (error instanceof ServiceInvalidError) {
+        this.setData({
+          creating: false,
+          problem: SERVICE_PROBLEM_TEXTS[error.problems[0] ?? 'NO_TITLE'],
+        });
+        return;
+      }
+      this.setData({ creating: false, notice: errorMessageOf(error) });
+      await this.load();
+    }
   },
 
   async onCreate(this: PageInstance): Promise<void> {

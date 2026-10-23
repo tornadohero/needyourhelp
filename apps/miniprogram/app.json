@@ -12,7 +12,8 @@
     "pages/provider-services/provider-services",
     "pages/provider-slots/provider-slots",
     "pages/provider-orders/provider-orders",
-    "pages/provider-reviews/provider-reviews"
+    "pages/provider-reviews/provider-reviews",
+    "pages/provider-verification/provider-verification"
   ],
   "window": {
     "navigationBarTitleText": "导师平台",

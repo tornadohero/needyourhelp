@@ -29,6 +29,7 @@ describe('ROUTES', () => {
     expect(ROUTES.providerMe).toBe(ENDPOINTS.providerMe);
     expect(ROUTES.providerSubmit).toBe(ENDPOINTS.providerSubmit);
     expect(ROUTES.providerMyServices).toBe(ENDPOINTS.providerServices);
+    expect(ROUTES.providerService).toBe(ENDPOINTS.providerService);
     expect(ROUTES.providerMyAvailability).toBe(ENDPOINTS.providerAvailability);
     expect(ROUTES.providerServicePublish).toBe(ENDPOINTS.providerServicePublish);
     expect(ROUTES.providerServiceUnpublish).toBe(ENDPOINTS.providerServiceUnpublish);
@@ -52,6 +53,8 @@ describe('ROUTES', () => {
     expect(ROUTES.reportAppeal).toBe(ENDPOINTS.reportAppeal);
     expect(ROUTES.verificationCases).toBe(ENDPOINTS.verificationCases);
     expect(ROUTES.verificationMe).toBe(ENDPOINTS.verificationMe);
+    expect(ROUTES.verificationCaseDocuments).toBe(ENDPOINTS.verificationCaseDocuments);
+    expect(ROUTES.verificationCaseSubmit).toBe(ENDPOINTS.verificationCaseSubmit);
   });
 });
 

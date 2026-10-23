@@ -13,6 +13,7 @@ import {
   applyAsProvider,
   myProviderProfile,
   myVerification,
+  replaceProfile,
   submitApplication,
 } from '../../src/services/provider-desk';
 
@@ -40,6 +41,13 @@ interface ProviderDeskData {
   headline: string;
   bio: string;
   cityCode: string;
+  /** Editing is a PUT replacement: the whole profile is sent back. */
+  editing: boolean;
+  editName: string;
+  editHeadline: string;
+  editBio: string;
+  editCity: string;
+  editCapabilities: { type: CapabilityTypeName; label: string; on: boolean }[];
 }
 
 type PageInstance = WechatMiniprogram.Page.Instance<
@@ -71,6 +79,16 @@ const pageOptions = {
     headline: '',
     bio: '',
     cityCode: '',
+    editing: false,
+    editName: '',
+    editHeadline: '',
+    editBio: '',
+    editCity: '',
+    editCapabilities: CAPABILITIES.map((type) => ({
+      type,
+      label: CAPABILITY_TEXTS[type],
+      on: false,
+    })),
   },
 
   context: ensureContext(),
@@ -103,6 +121,79 @@ const pageOptions = {
       this.setData({ bio: value });
     } else if (field === 'cityCode') {
       this.setData({ cityCode: value });
+    }
+  },
+
+  onStartEdit(this: PageInstance): void {
+    const desk = this.data.desk;
+    if (desk === null) {
+      return;
+    }
+    const claimed = new Set(desk.capabilities.map((capability) => capability.typeText));
+    this.setData({
+      editing: true,
+      editName: desk.name,
+      editHeadline: desk.headline,
+      editBio: desk.bio,
+      editCity: desk.cityCode ?? '',
+      editCapabilities: this.data.editCapabilities.map((capability) => ({
+        ...capability,
+        on: claimed.has(capability.label),
+      })),
+    });
+  },
+
+  onCancelEdit(this: PageInstance): void {
+    this.setData({ editing: false, notice: '' });
+  },
+
+  onEditInput(this: PageInstance, event: WechatMiniprogram.Input): void {
+    const field = String(event.currentTarget.dataset.field ?? '');
+    const value = String(event.detail.value ?? '');
+    if (field === 'editName') {
+      this.setData({ editName: value });
+    } else if (field === 'editHeadline') {
+      this.setData({ editHeadline: value });
+    } else if (field === 'editBio') {
+      this.setData({ editBio: value });
+    } else if (field === 'editCity') {
+      this.setData({ editCity: value });
+    }
+  },
+
+  onToggleEditCapability(this: PageInstance, event: WechatMiniprogram.TouchEvent): void {
+    const type = String(event.currentTarget.dataset.type ?? '') as CapabilityTypeName;
+    this.setData({
+      editCapabilities: this.data.editCapabilities.map((capability) =>
+        capability.type === type ? { ...capability, on: !capability.on } : capability,
+      ),
+    });
+  },
+
+  async onSaveEdit(this: PageInstance): Promise<void> {
+    this.setData({ acting: true, notice: '' });
+    try {
+      // A replacement: what the form leaves empty is cleared server-side.
+      const desk = await replaceProfile(this.context, {
+        publicName: this.data.editName,
+        headline: this.data.editHeadline,
+        bio: this.data.editBio,
+        cityCode: this.data.editCity,
+        capabilityTypes: this.data.editCapabilities
+          .filter((capability) => capability.on)
+          .map((capability) => capability.type),
+      });
+      this.setData({ acting: false, desk, editing: false });
+      showToast('资料已更新。');
+    } catch (error) {
+      if (error instanceof ApplicationInvalidError) {
+        this.setData({
+          acting: false,
+          notice: APPLICATION_PROBLEM_TEXTS[error.problems[0] ?? 'NO_PUBLIC_NAME'],
+        });
+        return;
+      }
+      this.setData({ acting: false, notice: errorMessageOf(error) });
     }
   },
 
@@ -156,6 +247,10 @@ const pageOptions = {
       // PROVIDER_NOT_APPROVED and friends: the state is the answer.
       this.setData({ acting: false, notice: errorMessageOf(error) });
     }
+  },
+
+  onOpenVerification(this: PageInstance): void {
+    navigateTo('/pages/provider-verification/provider-verification');
   },
 
   onOpenServices(this: PageInstance): void {

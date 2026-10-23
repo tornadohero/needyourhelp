@@ -33,6 +33,7 @@ export const ROUTES = {
   providerMe: '/providers/me',
   providerSubmit: '/providers/me/submit',
   providerMyServices: '/providers/me/services',
+  providerService: '/providers/me/services/:id',
   providerServicePublish: '/providers/me/services/:id/publish',
   providerServiceUnpublish: '/providers/me/services/:id/unpublish',
   providerMyAvailability: '/providers/me/availability',
@@ -60,6 +61,8 @@ export const ROUTES = {
   reportAppeal: '/reports/:id/appeal',
 
   verificationCases: '/verification/cases',
+  verificationCaseDocuments: '/verification/cases/:id/documents/upload-url',
+  verificationCaseSubmit: '/verification/cases/:id/submit',
   verificationMe: '/verification/me',
 } as const;
 

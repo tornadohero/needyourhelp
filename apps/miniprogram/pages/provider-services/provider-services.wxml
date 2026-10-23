@@ -23,11 +23,12 @@
         <button wx:if="{{item.canUnpublish}}" class="button" size="mini" data-id="{{item.id}}" bindtap="onUnpublish">
           下架
         </button>
+        <button class="button" size="mini" data-id="{{item.id}}" bindtap="onEditService">编辑</button>
       </view>
     </view>
 
     <view class="card">
-      <view class="section">新建服务</view>
+      <view class="section">{{editingId ? '编辑服务（整表替换）' : '新建服务'}}</view>
 
       <input
         class="input"
@@ -82,7 +83,11 @@
 
       <view wx:if="{{problem}}" class="notice">{{problem}}</view>
 
-      <button class="button" type="primary" loading="{{creating}}" bindtap="onCreate">创建服务</button>
+      <button wx:if="{{editingId}}" class="button" type="primary" loading="{{creating}}" bindtap="onSaveEdit">
+        保存修改
+      </button>
+      <button wx:else class="button" type="primary" loading="{{creating}}" bindtap="onCreate">创建服务</button>
+      <button wx:if="{{editingId}}" class="button" size="mini" bindtap="onCancelEdit">取消编辑</button>
     </view>
 
     <view wx:if="{{notice}}" class="notice">{{notice}}</view>

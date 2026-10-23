@@ -27,6 +27,8 @@ export const ENDPOINTS = {
   providerMe: '/providers/me',
   providerSubmit: '/providers/me/submit',
   providerServices: '/providers/me/services',
+  /** Full replacement with PUT: a WeChat client cannot send PATCH. */
+  providerService: '/providers/me/services/:id',
   /** Service lifecycle commands: the server still gates them on approval. */
   providerServicePublish: '/providers/me/services/:id/publish',
   providerServiceUnpublish: '/providers/me/services/:id/unpublish',
@@ -70,6 +72,8 @@ export const ENDPOINTS = {
   adminCaseFinalize: '/admin/moderation/:id/finalize',
   adminCompliance: '/admin/compliance',
   verificationCases: '/verification/cases',
+  verificationCaseDocuments: '/verification/cases/:id/documents/upload-url',
+  verificationCaseSubmit: '/verification/cases/:id/submit',
   verificationMe: '/verification/me',
   adminVerifications: '/admin/verifications',
   taxonomy: '/admin/taxonomy',
