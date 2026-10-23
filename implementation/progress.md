@@ -2666,7 +2666,7 @@ apps/miniprogram
 |---|---|
 | 核心 | `src/core/provider-desk.ts`（档案/能力/验证/服务/时段视图 + 接单命令判定 + 入驻申请体）、`src/core/service-form.ts`（服务表单与分为单位的金额）、`src/core/slot-form.ts`（本地时间 → ISO） |
 | 服务 | `src/services/provider-desk.ts`（档案、验证、入驻、提交审核、服务增删改发布、时段增删、confirm/start/complete） |
-| 页面 | `pages/provider-desk`、`pages/provider-services`、`pages/provider-slots`、`pages/provider-orders`、`pages/provider-reviews`；`pages/me` 新增「导师工作台」入口 |
+| 页面 | `pages/provider-desk`（含资料编辑）、`pages/provider-services`（含服务编辑）、`pages/provider-slots`、`pages/provider-orders`、`pages/provider-reviews`、`pages/provider-verification`；`pages/me` 新增「导师工作台」入口 |
 | 契约 | `ENDPOINTS` 补齐 `providerServicePublish`、`providerServiceUnpublish`、`providerSlot`、`orderConfirm`、`orderStart`、`orderComplete`，并纳入路由漂移守卫 |
 
 ### 验收与证据
@@ -2683,10 +2683,15 @@ apps/miniprogram
 - 新增 49 个单测（工作台 13、服务表单 15、时段表单 4、工作台服务 15、评价列表 2），小程序单测 **134 → 183**，全仓库单测 623 通过。
 - `format` / `lint` / `typecheck` 全部通过。
 
+### 本轮追加（解法 1 的两项）
+
+- **资料与服务编辑**：后端新增 `PUT /providers/me`（`ReplaceProviderProfileDto`）与 `PUT /providers/me/services/:id`（`ReplaceServiceDto`）——整表替换语义，PATCH 原样保留；前端工作台"编辑资料"与服务页"编辑"走 PUT，省略字段即清空。集成测试覆盖：替换生效、省略字段被清空、`approvalStatus`/`searchable` 仍被拒绝、已发布服务不可编辑。
+- **证件上传（FE-41）**：`fileHash` 改为可选（仍校验 SHA-256 格式），`verification_documents.file_hash` 改为可空（迁移 `20261023100000_verification_document_hash_optional`），`PUT /files/verification/...` 收到字节后由服务端计算并记录哈希（首次上传为准）；小程序 `pages/provider-verification` 走"建用例 → 签名 URL 直传 → 提交"，不传哈希、不缓存证件。
+
 ### 缺口（未做，需决策）
 
-- **资料编辑（FE-40 的编辑部分）不可用**：`PATCH /providers/me` 与 `PATCH /providers/me/services/:id` 是唯一接口，而 `wx.request` 无 PATCH（`src/platform/wechat.ts` 明确拒绝降级为 POST）。需要后端补 PUT/POST 语义，或前端改为整表提交，才能做资料与服务编辑。
-- **证件上传（FE-41，阻塞）**：后端要求 `fileHash` 为 **SHA-256 hex**（`isSha256Hex`），而小程序 `wx.getFileInfo` 只提供 `md5` / `sha1`，基础库无 SHA-256，因此无法在客户端生成合规的上传凭证。可行解法（三选一，需你定）：① 服务端改为只认服务端计算的哈希，去掉客户端 `fileHash` 入参；② 接受 `sha1`/`md5` 并同步修改 `verification-document-policy`；③ 小程序内置一份纯 JS SHA-256（增加体积与依赖）。在定下之前页面不实现，避免出现"看起来能传、实际必失败"的入口。
+- ~~**资料编辑（FE-40 的编辑部分）不可用**~~ → **已解决（解法 1）**：后端补 `PUT /providers/me` 与 `PUT /providers/me/services/:id`（整表替换，PATCH 保留），前端资料与服务编辑已实现并测试。
+- ~~证件上传（FE-41）阻塞~~ → **已解决（解法 1）**：`fileHash` 改为可选，`verification_documents.file_hash` 改为可空（迁移 `20261023100000_verification_document_hash_optional`），由服务端在收到字节后计算并记录 SHA-256；小程序 `pages/provider-verification` 完成"建用例 → 签名 URL 直传 → 提交"链路。
 - **收益（特性开关）**：后端无对应接口（缺口 G7），前端无数据可渲染。
 - **导师 IM（FE-50）**、**职业赛道（FE-51）**、**支付（FE-35）**：各自为独立任务，未纳入 T032。
 - 支付（FE-35）仍待做（T032 未包含）。

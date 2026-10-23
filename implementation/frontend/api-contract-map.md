@@ -81,6 +81,7 @@ DTO 与返回类型实际提取，未虚构任何接口。基线与版本：分�
 | POST | `/providers/applications` | JWT | `CreateProviderApplicationDto{publicName,cityCode,capabilityTypes[]}` | `ProviderProfileResponse`（201） | `VALIDATION_ERROR`、`RATE_LIMITED` | 小程序「导师入驻」 | 已实现 | `provider-http.spec.ts` + E2E-02 |
 | GET | `/providers/me?providerType=TUTORING\|CAREER` | JWT | query | `ProviderProfileResponse` | `NOT_FOUND` | 入驻状态/资料编辑 | 已实现 | `provider-http.spec.ts` |
 | PATCH | `/providers/me?providerType=` | JWT | `UpdateProviderProfileDto` | `ProviderProfileResponse` | `VALIDATION_ERROR` | 资料编辑 | 已实现 | `provider-http.spec.ts` |
+| PUT | `/providers/me?providerType=` | JWT | `ReplaceProviderProfileDto` | `ProviderProfileResponse` | `VALIDATION_ERROR` | 资料编辑（小程序：整表替换，因为没有 PATCH） | 已实现 | `provider-http.spec.ts` |
 | POST | `/providers/me/submit?providerType=` | JWT | — | `ProviderProfileResponse`（200） | `ORDER_INVALID_STATE` 类状态错误 | 提交审核 | 已实现 | `provider-http.spec.ts` |
 
 ## 4. Verification（含私密证件）
@@ -89,7 +90,7 @@ DTO 与返回类型实际提取，未虚构任何接口。基线与版本：分�
 |---|---|---|---|---|---|---|---|---|
 | POST | `/verification/cases` | JWT | `CreateVerificationCaseDto{verificationType}` | `VerificationCaseResponse`（201） | `VALIDATION_ERROR` | 身份/学历验证入口 | 已实现 | `verification-http.spec.ts` |
 | GET | `/verification/me?providerType=` | JWT | query | `MyVerificationResponse` | `NOT_FOUND` | 验证状态页 | 已实现 | `verification-http.spec.ts` |
-| POST | `/verification/cases/:id/documents/upload-url` | JWT | `RequestUploadUrlDto{documentType,contentType,byteSize,fileHash}` | `VerificationUploadUrlResponse`（201，签名 URL，15 分钟） | `VALIDATION_ERROR`、`NOT_FOUND` | 上传证件 | 已实现（上传目标见 §14） | `verification-http.spec.ts` |
+| POST | `/verification/cases/:id/documents/upload-url` | JWT | `RequestUploadUrlDto{documentType,contentType,byteSize,fileHash?}` | `VerificationUploadUrlResponse`（201，签名 URL，15 分钟） | `VALIDATION_ERROR`、`NOT_FOUND` | 上传证件 | 已实现（上传目标见 §14；**`fileHash` 可选**，小程序无法计算 SHA-256，由服务端按收到的字节记录） | `verification-http.spec.ts`、`files.controller.spec.ts` |
 | PUT | `/files/verification/:caseId/:documentId?expires=&signature=` | **签名 URL**（无会话） | 二进制正文（`image/jpeg|png|webp`、`application/pdf`；≤ `VERIFICATION_DOCUMENT_MAX_BYTES`） | `{key,byteSize,contentType}`（200） | `FORBIDDEN`（签名无效/过期/用途不符）、`VALIDATION_ERROR`(413/415)、`NOT_FOUND` | 上传证件（T027b G3） | 已实现 | `verification-files-http.spec.ts`、`files.controller.spec.ts` |
 | GET | `/files/verification/:caseId/:documentId?expires=&signature=` | **签名 URL** | — | 二进制（`cache-control: no-store`） | 同上 | 查看证件（T027b G3） | 已实现 | 同上 |
 | POST | `/verification/cases/:id/submit` | JWT | — | `VerificationCaseResponse`（200） | `NOT_FOUND`、`VALIDATION_ERROR` | 提交验证 | 已实现 | `verification-http.spec.ts` |
@@ -115,6 +116,7 @@ DTO 与返回类型实际提取，未虚构任何接口。基线与版本：分�
 | POST | `/providers/me/services?providerType=` | JWT（导师） | `CreateServiceDto{title,durationMinutes,priceMinor,subjectCodes[]}` | `ServiceResponse`（201） | `VALIDATION_ERROR`、`PROVIDER_NOT_APPROVED` | 服务编辑 | 已实现 | `services-http.spec.ts` |
 | GET | `/providers/me/services?providerType=` | JWT（导师） | query | `ProviderServiceListResponse` | `NOT_FOUND` | 服务列表 | 已实现 | `services-http.spec.ts` |
 | PATCH | `/providers/me/services/:id` | JWT（导师） | `UpdateServiceDto` | `ServiceResponse` | `VALIDATION_ERROR`、`NOT_FOUND` | 服务编辑 | 已实现 | `services-http.spec.ts` |
+| PUT | `/providers/me/services/:id` | JWT（导师） | `ReplaceServiceDto` | `ServiceResponse` | `VALIDATION_ERROR`、`NOT_FOUND` | 服务编辑（小程序：整表替换） | 已实现 | `services-http.spec.ts` |
 | POST | `/providers/me/services/:id/publish` | JWT（导师） | query | `ServiceResponse`（200） | `PROVIDER_NOT_APPROVED`、`NOT_FOUND` | 发布服务 | 已实现 | `services-http.spec.ts` |
 | POST | `/providers/me/services/:id/unpublish` | JWT（导师） | query | `ServiceResponse`（200） | `NOT_FOUND` | 下架服务 | 已实现 | `services-http.spec.ts` |
 
