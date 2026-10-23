@@ -1,42 +1,62 @@
 # Launch progress — 启动进度追踪
 
-追踪"本地可启动 / 产品可交付"之间还差什么。状态以 2026-10-12 仓库结构审计与 2026-10-17 Git 基线审计的实测证据为准。
+追踪"本地可启动 / 产品可交付"之间还差什么。
+状态以 2026-10-12 结构审计、2026-10-17 Git 基线审计与 2026-10-23（T031–T036）的实测证据为准。
 
 ## 1. 三个应用
 
 | 应用 | 目录 | 本地启动 | 功能完成度 | 结论 |
 |---|---|---|---|---|
-| 后端 API | `apps/api` | ✅ 实测启动：`/health` 200、`/health/ready` 200 且 `database:"up"`、mock 登录返回 token | 23/24 任务 PASS，T019 PARTIAL（页面缺） | **READY FOR LOCAL LAUNCH** |
-| 管理台 | `apps/admin` | ⚠️ `pnpm --filter @mentor/admin dev` 可起（默认端口与 API 冲突，需 `-p 3001`） | 仅 T001 占位页；无登录/无运营页面/无 env | **NOT READY** |
-| 小程序 | `apps/miniprogram` | ⚠️ 微信开发者工具可打开 | 仅 T001 占位页；`touristappid`；无 API client | **NOT READY** |
+| 后端 API | `apps/api` | ✅ 构建后 `start:prod`；`/health` 200、`/health/ready` 200 且 `database:"up"` | T001–T035b 全部 done | **READY FOR LOCAL LAUNCH** |
+| 管理台 | `apps/admin` | ✅ `dev -p 3001`（需 `ADMIN_API_BASE_URL`）；12 条路由构建通过 | 登录 + 9 个运营页（T033） | **READY FOR LOCAL LAUNCH** |
+| 小程序 | `apps/miniprogram` | ✅ 开发者工具打开；13 个页面 | 家长主链路（含支付，T035b）+ 导师工作台（T032）；真机 appid 待替换 | **READY FOR LOCAL LAUNCH**（真机待验） |
+
+三端一起跑：`pnpm test:e2e-three` —— 7/7（T035，T035b 之后支付也走客户端模块）。
 
 ## 2. 阻塞项（来自仓库结构审计）
 
-| # | 阻塞项 | 严重度 | 现状（2026-10-17） |
+| # | 阻塞项 | 严重度 | 现状 |
 |---|---|---|---|
-| B1 | 管理台无运营页面 | 高 | 未开始（等待 T026） |
-| B2 | 小程序无业务页面/API client | 高 | 未开始（等待 T027） |
-| B3 | Redis 未接入（限流/幂等为内存实现） | 高（生产）/ 中（本地） | 未开始（等待 T028） |
-| B4 | T002–T024 未提交 | 高 | **已解决**：`1d19e70` 已提交并推送 `origin/main` |
-| B5 | 本环境 `pnpm build` 被批量删除保护拦截 | 中（本地） | 已写入 `environment.md` 的绕开方式 |
-| B6 | 集成/E2E 未重跑（会重置测试库） | 中 | 待安排一次允许重置测试库的验证 |
-| B7 | 无 `/metrics` 与外部拨测 | 中（生产） | 未开始 |
-| B8 | `implementation/launch/*` 启动文档为空 | 中 | **本轮解决**：`environment.md`、本文件、`git-baseline-audit.md` 已写入；`launch-audit.md` 仍为空 |
-| B9 | `task-breakdown.md` 无小程序/管理台任务 | 中 | 待新增 T026/T027（+T028 工程修正） |
+| B1 | 管理台无运营页面 | 高 | **已解决**：T033 管理台（登录 + 9 页） |
+| B2 | 小程序无业务页面/API client | 高 | **已解决**：T031 预约与订单、T032 导师工作台、T035b 支付页 |
+| B3 | Redis 未接入 | 高（生产）/ 中（本地） | **已解决**：T034（Redis 版限流与幂等 + 内存降级） |
+| B4 | T002–T024 未提交 | 高 | **已解决**：T025（`1d19e70` 及后续分组提交，已推送） |
+| B5 | 本环境 `pnpm build` 被批量删除保护拦截 | 中（本地） | 已知环境问题，绕开方式写入 `environment.md` |
+| B6 | 集成/E2E 未重跑 | 中 | **已解决**：集成 282、E2E 8/8、三端 7/7 均在当期跑过 |
+| B7 | 无 `/metrics` 与外部拨测 | 中（生产） | **未解决** → 记为 L4 |
+| B8 | 启动文档为空 | 中 | **已解决**：T025 写入三份 + T036 补齐 `launch-audit.md` 与首次运行走查 |
+| B9 | 任务表无小程序/管理台任务 | 中 | **已解决**：T031–T035b 已入 `task-breakdown.md` |
 
-## 3. 提交进度（T025 分组方案）
+## 3. 剩余发布阻塞（生产）
+
+见 [`launch-audit.md`](./launch-audit.md) §3：
+
+| # | 项 | 说明 |
+|---|---|---|
+| L1 | 真实小程序 appid | 替换 `touristappid` |
+| L2 | 真实微信支付 | 商户号 + API v3 密钥 + 回调地址 |
+| L3 | 私有对象存储 | 替换 mock 适配器 |
+| L4 | 外部拨测与 `/metrics` | 监控补齐 |
+| L5 | CI 上实跑三端套件 | 本地已通，CI 待验证 |
+| L6 | 多实例配 `REDIS_URL` | 否则限流/幂等只在单实例内成立 |
+
+## 4. 提交与发布进度
 
 | 组 | 内容 | 状态 |
 |---|---|---|
-| 基线 | `git tag -a baseline-t024`（指向 `1d19e70`） + 推送标签 | 本轮执行 |
-| G1 | `docs(launch): git baseline audit + commit plan`<br>`docs(launch): local environment runbook`<br>`chore(launch): launch progress tracker and T025 record` | 本轮执行 |
-| G2 | 管理台页面（建议 T026）：api client → 登录 → provider review → orders → moderation → platform config | 待开始 |
-| G3 | 小程序页面（建议 T027）：真实 appid → api client + `wx.login` → parent pages → provider pages | 待开始 |
-| G4 | 工程修正（建议 T028）：Redis 版限流/幂等、`.gitattributes` 与提交前密钥扫描 | 待开始 |
+| 基线 | `git tag -a baseline-t024`（指向 `1d19e70`）+ 推送 | 已执行（T025） |
+| G1 | 启动文档与提交纪律 | 已执行（T025、T036） |
+| G2 | 管理台页面 | 已执行（T033） |
+| G3 | 小程序页面 | 已执行（T031/T032/T035b），真机 appid 待替换（L1） |
+| G4 | 工程：Redis 限流/幂等；`.gitattributes` 与提交前密钥扫描 | Redis 已做（T034）；**`.gitattributes` 与提交前密钥扫描仍未做** |
+| G5 | 三端 E2E 联调 | 已执行（T035/T035b） |
+| G6 | 启动文档与发布准备（T036） | 本轮执行 |
 
-## 4. 下一步建议顺序
+## 5. 下一步建议顺序
 
-1. 跑一次完整验证（允许重置测试库）：`pnpm test:integration` + `pnpm test:e2e`，把审计中"既有记录"升级为当期证据（解 B6）。
-2. T026 管理台：先 `NEXT_PUBLIC_API_BASE_URL` 与登录，再按 `specs/11` §Admin Web / `specs/12` 逐页实现。
-3. T027 小程序：申请真实 appid 替换 `touristappid`，实现 `wx.login` → `POST /api/v1/auth/wechat/login`。
-4. T028 工程：Redis 适配器替换 `RateLimiter`/`IdempotencyStore` 的内存实现；加提交前密钥扫描钩子。
+1. 补齐 L1/L2/L3（真实 appid、微信支付、对象存储），才能从"本地可启动"走到"可对外发布"。
+2. 补 `.gitattributes` 与提交前密钥扫描钩子（G4 剩余部分）。
+3. CI 上跑一次 `pnpm test:e2e-three`（L5），把"本地已通"升级为"每次提交都通"。
+4. 外部拨测与 `/metrics`（L4）。
+5. 剩余前端任务：家长评价与举报（FE-37/FE-38）、消息（FE-50）、职业赛道（FE-51）、
+   管理台合规/举报/申诉页（FE-14/FE-16/FE-17）。
