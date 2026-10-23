@@ -43,6 +43,7 @@ A task is only marked `done` when every acceptance criterion in
 | T032 | Mini program provider desk | done | provider desk (own record, application, submit for review, verification status), service management (create/publish/unpublish), availability management, delivery commands confirm/start/complete; 47 new unit tests (181 total) |
 | T033 | Admin console | done | Next.js operations console: console login (httpOnly session), dashboard, provider review, verification queue with signed document access, orders and idempotent refunds, users and roles, audit log, feature flags, taxonomy (archive only), platform rules (explicit publish); 34 new admin unit tests (36 total) |
 | T034 | Redis & dependency completeness | done | ioredis-backed rate limiter (INCR/EXPIRE/TTL) and idempotency store (SET NX claim + stored answer) with in-process fallback; optional DI so modules build alone; `ops/redis.md`; lockfile still `install --frozen-lockfile` clean; 18 new unit tests (445 api) |
+| T035 | Three-end E2E | done | `apps/e2e`: real API process on a disposable DB, driven by the shipping mini program modules and the shipping admin client over HTTP — apply/evidence/approve/publish/discover/book/pay/deliver/idempotent refund/audit; 7 tests |
 
 ## T002 — Database foundation
 
@@ -2771,3 +2772,41 @@ FE-14（教师合规）、FE-16（举报队列）、FE-17（申诉终审）不�
 - 分布式锁仍未使用 Redis（可用性占用是 PostgreSQL 事务内条件更新，T011）；有意如此。
 - 未引入 Redis 缓存与队列；未测试 sentinel/cluster 拓扑。
 - 未做"连真实 Redis 的集成测试"（本机无 Redis 服务）；以 fake 断言 + `ops/redis.md` 的人工验证步骤替代。
+
+## T035 — 三端 E2E 联调
+
+对应 `frontend-task-breakdown.md` 的 **FE-60（小程序家长主链路）**、**FE-61（管理台：商家审核与订单退款）**、**FE-62（隐私与权限回归）**，以及 `specs/14-test-strategy.md` 的最上层。
+
+### 交付
+
+| 项 | 文件 |
+|---|---|
+| 新包 | `apps/e2e`（`@mentor/e2e`）：`global-setup.ts` 构建并启动真实 API 进程（一次性库，从迁移重建、等 `/health/ready`）、`helpers/ends.ts` 构造三端、`vitest.config.ts` 内联链接的 TS 源 |
+| 客户端出口 | `apps/miniprogram/src/index.ts`（core/services 的可移植出口，不含页面）、`apps/admin` 的 `exports → src/lib/client.ts` |
+| 旅程 | `test/three-end-journey.spec.ts`：入驻→提交→证件上传（签名 URL 直传）→控制台批准验证与商家→发布服务与时段→家长发现与下单→支付回调→接单/开始→控制台幂等退款→家长看到退款→审计留痕 |
+| 工程 | 根 `test:e2e-three` 脚本、`verify` 与 CI 各加一步 |
+
+### 验收与证据
+
+- **服务端是真的**：`pnpm --filter @mentor/api build` 后 `node dist/main.js`，数据库由 `prisma migrate reset` 从提交过的迁移重建；三端之间没有任何 stub。
+- **两端跑自己的代码**：小程序用 `ApiClient` + `SessionManager` + 各 service（Node transport 替代 `wx.request`）；管理台用 `createAdminClient`。测试断言的是客户端视图模型（如 `¥200.00`、`COMPLETED/REFUNDED`）。
+- **只有两处裸 HTTP 且都写明原因**：mock 网关支付回调（家长支付页未实现）与首位管理员 bootstrap（运营不是客户端旅程）。
+- **退款只发生一次**：同一 `Idempotency-Key` 重放返回同一条退款；退款后 `complete` 被拒（状态机守住了）。
+- **审计可查**：`PROVIDER_APPROVED` 与验证决策都在审计日志里。
+
+### 过程中发现并修正的问题
+
+1. 管理台 `auditLogs` 传了 API 不认识的 `resource` 字段（`forbidNonWhitelisted` 拒绝）→ 改为 `resourceType`；`pageSize` 上限为 50。
+2. 旅程原设计"完成后退款"，但平台策略是 `COMPLETED` 不可退 → 改为在 `IN_PROGRESS` 时退款，并额外断言退款后不能再 `complete`（更贴近真实场景，也验证了状态机）。
+3. 退款重放必须用**同一个**幂等键；换键重发是真实的新请求，平台正确地拒绝（测试按此修正）。
+
+### 测试
+
+- `apps/e2e`：**7 个测试全部通过**（含端到端全流程）。
+- 其余套件未受影响：单测 690、集成 282、E2E 8 全部通过；`format`/`lint`/`typecheck` 通过。
+
+### 未做
+
+- 家长端支付页未实现，支付这一步仍由裸 HTTP 的 mock 回调代替（T032 之后的下一个前端任务）。
+- 隐私与权限回归（FE-62）只间接覆盖（儿童隔离等已有单端 E2E-06）；未在三端旅程中复现。
+- 三端 E2E 依赖本地 PostgreSQL；CI 已有 postgres 服务，但尚未在 CI 上实际跑过（本地已跑通）。

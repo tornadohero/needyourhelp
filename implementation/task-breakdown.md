@@ -299,6 +299,20 @@ Acceptance:
 - a failed idempotent `work` releases its claim, so a retry runs it again; the same key with a different payload is `IDEMPOTENCY_CONFLICT`, never a replay.
 - `pnpm install --frozen-lockfile` passes from the committed lockfile.
 
+## T035 Three-end E2E
+One journey told by the three clients against one real server.
+Input: `specs/14-test-strategy.md` §E2E, `specs/12-admin-spec.md`, `implementation/frontend/frontend-task-breakdown.md` (FE-60, FE-61, FE-62), `apps/api/test/e2e` (the existing single-end journeys).
+Output:
+- `apps/e2e` — a workspace package that builds and boots the API as a real process on a disposable database, then drives it with the **shipping** mini program modules and the **shipping** admin client over real HTTP
+- `apps/miniprogram/src/index.ts` and `apps/admin` exports: the portable surface of each client (pages are not exported)
+- `apps/e2e/test/three-end-journey.spec.ts` — apply → evidence upload → console approval → publish → discover → book → pay → deliver → refund → audit
+- root `test:e2e-three` script and a CI step
+Acceptance:
+- the server between the ends is the one `main.ts` boots: compiled, listening, on a database rebuilt from the committed migrations. No end stubs another.
+- the mini program and the admin console run their own code — session, envelope, view models, commands — against that server.
+- only two steps use raw HTTP, and both are named in the test: the mock-gateway payment callback (the parent payment screen is a later task) and the first-administrator bootstrap.
+- the journey ends where an auditor would look: the refund is idempotent, the parent sees the refund, and the operator's decisions are in the audit log.
+
 ## CodeBuddy execution instruction
 
 Execute tasks strictly in order unless a dependency is explicitly satisfied.
@@ -313,4 +327,4 @@ For each task:
 7. Report files changed and acceptance results.
 8. Stop before the next task unless the user asks to continue.
 
-Never generate T001-T034 in one uncontrolled pass.
+Never generate T001-T035 in one uncontrolled pass.
