@@ -28,3 +28,18 @@
 .button {
   margin-top: 24rpx;
 }
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 28rpx;
+}
+
+.status {
+  font-size: 26rpx;
+  color: #07c160;
+}
+
+.total {
+  font-weight: 600;
+}

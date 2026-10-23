@@ -15,7 +15,13 @@
     <view class="card">
       <view class="section">服务（{{provider.serviceCount}}）</view>
       <view wx:if="{{provider.serviceCount === 0}}" class="hint">该导师暂无已发布服务。</view>
-      <view class="service" wx:for="{{provider.services}}" wx:key="id">
+      <view
+        class="service"
+        wx:for="{{provider.services}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onBookService"
+      >
         <view>{{item.title}}</view>
         <!-- Money screen: service, duration and the price the server decided. -->
         <view class="hint">{{item.durationText}} · {{item.priceText}} · {{item.deliveryText}}</view>
@@ -28,6 +34,9 @@
       <view wx:if="{{slots.length === 0}}" class="hint">暂无可预约时段。</view>
       <view class="slot" wx:for="{{slots}}" wx:key="id">{{item.rangeText}}</view>
     </view>
+
+    <!-- Booking never states a price here: the server prices the order (T031). -->
+    <button class="button" type="primary" bindtap="onBook">预约该导师</button>
 
     <view class="card">
       <view class="section">评价</view>

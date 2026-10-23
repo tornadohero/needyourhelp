@@ -1,0 +1,66 @@
+.page {
+  padding: 32rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 600;
+}
+
+.hint {
+  font-size: 26rpx;
+  color: #8a8a8a;
+}
+
+.card {
+  padding: 24rpx;
+  margin-top: 24rpx;
+  border-radius: 16rpx;
+  background: #f6f7f9;
+}
+
+.section {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8rpx 0;
+  font-size: 28rpx;
+}
+
+.label {
+  color: #8a8a8a;
+}
+
+.total {
+  font-weight: 600;
+}
+
+.refund {
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #eceef0;
+}
+
+.note {
+  width: 100%;
+  min-height: 120rpx;
+  font-size: 28rpx;
+}
+
+.notice {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: #d4380d;
+}
+
+.state {
+  font-size: 28rpx;
+}
+
+.button {
+  margin-top: 24rpx;
+}

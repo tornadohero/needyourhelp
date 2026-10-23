@@ -1,0 +1,76 @@
+<view class="page">
+  <view class="title">创建预约</view>
+  <view wx:if="{{providerName}}" class="hint">{{providerName}}</view>
+
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <block wx:else>
+    <view class="card">
+      <view class="section">选择服务</view>
+      <view wx:if="{{services.length === 0}}" class="hint">该导师暂无已发布服务。</view>
+      <view
+        class="option {{item.id === selectedServiceId ? 'option-on' : ''}}"
+        wx:for="{{services}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onSelectService"
+      >
+        <view>{{item.title}}</view>
+        <!-- Money screen: duration and the price the server decided. -->
+        <view class="hint">{{item.durationText}} · {{item.priceText}} · {{item.deliveryText}}</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section">选择时段</view>
+      <view wx:if="{{slots.length === 0}}" class="hint">暂无可预约时段。</view>
+      <view
+        class="option {{item.id === selectedSlotId ? 'option-on' : ''}}"
+        wx:for="{{slots}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onSelectSlot"
+      >
+        {{item.rangeText}}
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section">为孩子预约（可选）</view>
+      <view wx:if="{{children.length === 0}}" class="hint">还没有孩子档案，可不选择。</view>
+      <view
+        class="option {{item.id === selectedChildId ? 'option-on' : ''}}"
+        wx:for="{{children}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onSelectChild"
+      >
+        <view>{{item.name}} · {{item.gradeText}}</view>
+        <view class="hint">{{item.consentText}}{{item.selectable ? '' : '（不可预约）'}}</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section">备注（可选）</view>
+      <textarea
+        class="note"
+        placeholder="想让导师知道的内容"
+        value="{{note}}"
+        maxlength="500"
+        bindinput="onNoteInput"
+      />
+    </view>
+
+    <view wx:if="{{problem}}" class="notice">{{problem}}</view>
+
+    <!-- The button never says a price: the server decides it on submit. -->
+    <button class="button" type="primary" loading="{{submitting}}" bindtap="onSubmit">
+      提交预约
+    </button>
+  </block>
+</view>

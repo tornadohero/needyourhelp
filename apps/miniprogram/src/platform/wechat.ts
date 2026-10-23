@@ -78,6 +78,41 @@ export function createWechatTokenStore(): TokenStore {
 }
 
 /**
+ * Navigation and feedback.
+ *
+ * They live here for the same reason the transport does: a page that calls `wx`
+ * directly cannot be reasoned about (or moved) without the platform.
+ */
+
+export function navigateTo(url: string): void {
+  wx.navigateTo({ url });
+}
+
+export function redirectTo(url: string): void {
+  wx.redirectTo({ url });
+}
+
+/** A short message. `icon: 'none'` keeps a failure from looking like a success. */
+export function showToast(title: string): void {
+  wx.showToast({ title, icon: 'none' });
+}
+
+/**
+ * A yes/no question, for the two actions that cannot be undone: cancelling a
+ * booking and asking for a refund.
+ */
+export function confirm(options: { title: string; content: string }): Promise<boolean> {
+  return new Promise((resolve) => {
+    wx.showModal({
+      title: options.title,
+      content: options.content,
+      success: (result: { confirm?: boolean }) => resolve(result.confirm === true),
+      fail: () => resolve(false),
+    });
+  });
+}
+
+/**
  * `wx.request` has no PATCH.
  *
  * The client refuses rather than silently downgrading to POST: a write that

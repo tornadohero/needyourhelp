@@ -1,0 +1,60 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <block wx:elif="{{order}}">
+    <view class="title">{{order.title}}</view>
+    <view class="hint">状态：{{order.statusText}}</view>
+    <!-- Order number: the reference a support conversation starts from. -->
+    <view class="hint">订单号：{{order.orderNo}}</view>
+
+    <view class="card">
+      <view class="row"><text class="label">服务</text><text>{{order.title}}</text></view>
+      <view class="row"><text class="label">时长</text><text>{{order.durationText}}</text></view>
+      <view class="row"><text class="label">单价</text><text>{{order.unitPriceText}}</text></view>
+      <view class="row"><text class="label">合计</text><text class="total">{{order.totalText}}</text></view>
+      <view wx:if="{{order.timeText}}" class="row">
+        <text class="label">时间</text><text>{{order.timeText}}</text>
+      </view>
+      <view class="row"><text class="label">对象</text><text>{{order.childText}}</text></view>
+      <view class="row"><text class="label">下单时间</text><text>{{order.createdText}}</text></view>
+    </view>
+
+    <view wx:if="{{notice}}" class="notice">{{notice}}</view>
+
+    <view class="card" wx:if="{{refunds.length > 0}}">
+      <view class="section">退款进度</view>
+      <view class="refund" wx:for="{{refunds}}" wx:key="id">
+        <view>{{item.statusText}} · {{item.amountText}}</view>
+        <view wx:if="{{item.reasonText}}" class="hint">原因：{{item.reasonText}}</view>
+        <view class="hint">{{item.createdText}}</view>
+      </view>
+    </view>
+
+    <!-- A button is only offered for a command the state machine allows; the
+         server still decides, and 409 reloads the screen. -->
+    <button wx:if="{{order.canCancel}}" class="button" loading="{{acting}}" bindtap="onCancel">
+      取消预约
+    </button>
+
+    <block wx:if="{{order.canRequestRefund}}">
+      <view class="card">
+        <view class="section">申请退款</view>
+        <textarea
+          class="note"
+          placeholder="退款原因（可选）"
+          value="{{refundReason}}"
+          maxlength="200"
+          bindinput="onReasonInput"
+        />
+      </view>
+      <button class="button" loading="{{acting}}" bindtap="onRequestRefund">申请退款</button>
+    </block>
+
+    <button wx:if="{{order.canPay}}" class="button" disabled>待支付</button>
+  </block>
+</view>

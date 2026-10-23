@@ -1,0 +1,58 @@
+.page {
+  padding: 32rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 600;
+}
+
+.hint {
+  font-size: 26rpx;
+  color: #8a8a8a;
+}
+
+.card {
+  padding: 24rpx;
+  margin-top: 24rpx;
+  border-radius: 16rpx;
+  background: #f6f7f9;
+}
+
+.section {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.option {
+  padding: 16rpx;
+  margin-bottom: 12rpx;
+  border-radius: 12rpx;
+  background: #ffffff;
+}
+
+.option-on {
+  border: 2rpx solid #07c160;
+}
+
+.note {
+  width: 100%;
+  min-height: 120rpx;
+  font-size: 28rpx;
+}
+
+.notice {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: #d4380d;
+}
+
+.state {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+}
+
+.button {
+  margin-top: 32rpx;
+}

@@ -5,6 +5,7 @@ import { ApiClient } from '../core/http';
 import type { Transport, TransportRequest } from '../core/http';
 import { MemoryTokenStore, SessionManager } from '../core/session';
 import { ROUTES } from '../core/routes';
+import { listChildren } from './profile';
 import {
   getProfile,
   grantConsent,
@@ -148,5 +149,69 @@ describe('profile service', () => {
     // Ending the session is the guard: no token, no call.
     session.logout();
     await expect(listConsents(context)).rejects.toThrow();
+  });
+});
+
+describe('listChildren', () => {
+  it('reads the guardian’s own list and describes it for the picker', async () => {
+    const { context, calls } = harness([
+      {
+        status: 200,
+        body: {
+          data: {
+            children: [
+              {
+                id: 'child-1',
+                nickname: '小明',
+                birthYear: 2014,
+                gradeCode: 'G7',
+                schoolName: '某中学',
+                learningGoals: '数学基础',
+                consentStatus: 'GRANTED',
+                createdAt: '2026-10-01T00:00:00.000Z',
+              },
+            ],
+          },
+        },
+      },
+    ]);
+
+    const children = await listChildren(context);
+
+    expect(calls[0]?.url).toBe('https://api.example.com/api/v1/me/children');
+    expect(calls[0]?.headers.Authorization).toBe('Bearer access-1');
+    expect(children[0]?.name).toBe('小明');
+    expect(children[0]?.selectable).toBe(true);
+    // The picker keeps a name and a grade; the rest of the profile stays out.
+    expect(JSON.stringify(children)).not.toContain('某中学');
+  });
+
+  it('marks a child without consent as not bookable', async () => {
+    const { context } = harness([
+      {
+        status: 200,
+        body: {
+          data: {
+            children: [
+              {
+                id: 'child-2',
+                nickname: '小红',
+                birthYear: 2015,
+                gradeCode: null,
+                schoolName: null,
+                learningGoals: null,
+                consentStatus: 'PENDING',
+                createdAt: '2026-10-01T00:00:00.000Z',
+              },
+            ],
+          },
+        },
+      },
+    ]);
+
+    const children = await listChildren(context);
+
+    expect(children[0]?.selectable).toBe(false);
+    expect(children[0]?.consentText).toBe('待授权');
   });
 });

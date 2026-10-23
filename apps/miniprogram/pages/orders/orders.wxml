@@ -1,6 +1,44 @@
 <view class="page">
   <view class="title">我的订单</view>
+
   <view wx:if="{{loading}}" class="state">正在加载…</view>
-  <view wx:elif="{{sessionState === 'needs-login'}}" class="state">登录后查看订单。</view>
-  <view wx:else class="state">暂无订单。</view>
+
+  <view wx:elif="{{sessionState === 'needs-login'}}" class="state">
+    登录后查看订单。
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:elif="{{empty}}" class="state">暂无订单。</view>
+
+  <block wx:else>
+    <view
+      class="card"
+      wx:for="{{orders}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onOpenOrder"
+    >
+      <view class="row">
+        <text>{{item.title}}</text>
+        <text class="status">{{item.statusText}}</text>
+      </view>
+      <!-- Money screen: what was bought, when, and the total the server set. -->
+      <view class="hint">{{item.timeText}}</view>
+      <view class="row">
+        <text class="hint">订单号 {{item.orderNo}}</text>
+        <text class="total">{{item.amountText}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{hasMore}}" class="state">
+      <button class="button" size="mini" loading="{{loadingMore}}" bindtap="onLoadMore">
+        加载更多
+      </button>
+    </view>
+  </block>
 </view>

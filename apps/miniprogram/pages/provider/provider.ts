@@ -3,6 +3,7 @@ import type { MentorContext } from '../../src/app-context';
 import { errorMessageOf } from '../../src/core/errors';
 import { loadProviderDetail } from '../../src/services/discovery';
 import type { ProviderDetailView, ReviewRowView, SlotRowView } from '../../src/core/provider-view';
+import { navigateTo } from '../../src/platform/wechat';
 
 /**
  * 导师详情（T030）— `specs/11` §Parent pages：Tutor detail / Service detail.
@@ -56,6 +57,23 @@ const pageOptions = {
       // NOT_FOUND and FORBIDDEN look the same to a client on purpose.
       this.setData({ loading: false, error: errorMessageOf(error), provider: null });
     }
+  },
+
+  /**
+   * Open the booking screen for this provider.
+   *
+   * Nothing is chosen or priced here: the booking screen asks for the service,
+   * the slot and the child, and the server decides the money (T031).
+   */
+  onBook(this: PageInstance): void {
+    navigateTo(`/pages/booking/booking?providerId=${encodeURIComponent(this.providerId)}`);
+  },
+
+  onBookService(this: PageInstance, event: WechatMiniprogram.TouchEvent): void {
+    const serviceId = String(event.currentTarget.dataset.id ?? '');
+    navigateTo(
+      `/pages/booking/booking?providerId=${encodeURIComponent(this.providerId)}&serviceId=${encodeURIComponent(serviceId)}`,
+    );
   },
 
   async onRetry(this: PageInstance): Promise<void> {

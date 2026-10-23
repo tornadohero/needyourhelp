@@ -2,7 +2,10 @@ import type { MentorContext } from '../app-context';
 import { ROUTES, fillPath } from '../core/routes';
 import { describeConsents } from '../core/consents';
 import type { ConsentView } from '../core/consents';
+import { describeChild } from '../core/children';
+import type { ChildRowView } from '../core/children';
 import type {
+  ChildListResponse,
   ConsentTypeName,
   ConsentListResponse,
   ParentProfileResponse,
@@ -68,6 +71,20 @@ export async function updateProfile(
     context.client.put<ProfileResponse>(ROUTES.meProfile, { accessToken, body: update }),
   );
   return toProfileView(profile);
+}
+
+/**
+ * `GET /me/children` — the guardian's own list, for the booking picker.
+ *
+ * Scoped by the server to the guardian, so no other family's child is in here.
+ * The view keeps a nickname and a grade and drops the rest: a booking needs to
+ * know which child, not who they are (`specs/10`).
+ */
+export async function listChildren(context: MentorContext): Promise<ChildRowView[]> {
+  const list = await context.session.withSession((accessToken) =>
+    context.client.get<ChildListResponse>(ROUTES.meChildren, { accessToken }),
+  );
+  return list.children.map(describeChild);
 }
 
 /** `GET /me/consents`: the consent history, newest first. */
