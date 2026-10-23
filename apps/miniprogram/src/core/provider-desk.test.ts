@@ -17,6 +17,7 @@ import {
   describeServiceRow,
   describeSlotRow,
   describeVerificationCase,
+  profileReplacement,
   providerNextAction,
   providerOrdersOnly,
 } from './provider-desk';
@@ -288,5 +289,57 @@ describe('applicationRequest', () => {
     expect(
       applicationProblems({ publicName: '李老师', cityCode: '北京', capabilityTypes: ['TEACHER'] }),
     ).toEqual(['BAD_CITY']);
+  });
+});
+
+describe('profileReplacement', () => {
+  it('sends every field the provider owns, because PUT replaces the record', () => {
+    const body = profileReplacement({
+      publicName: '李老师',
+      headline: '初中数学',
+      capabilityTypes: ['TEACHER'],
+    });
+
+    expect(body).toEqual({
+      publicName: '李老师',
+      headline: '初中数学',
+      bio: null,
+      avatarVisibility: 'PUBLIC',
+      cityCode: null,
+      serviceMode: 'ONLINE',
+      capabilityTypes: ['TEACHER'],
+    });
+  });
+
+  it('clears what the form leaves empty instead of merging', () => {
+    const body = profileReplacement({
+      publicName: '李老师',
+      headline: '   ',
+      bio: '',
+      cityCode: 'BEIJING',
+      capabilityTypes: ['STUDENT_TUTOR'],
+    });
+
+    expect(body.headline).toBeNull();
+    expect(body.bio).toBeNull();
+    expect(body.cityCode).toBe('BEIJING');
+  });
+
+  it('refuses a replacement with no name or no identity', () => {
+    expect(() => profileReplacement({ publicName: ' ', capabilityTypes: ['TEACHER'] })).toThrow(
+      ApplicationInvalidError,
+    );
+    expect(() => profileReplacement({ publicName: '李老师', capabilityTypes: [] })).toThrow(
+      ApplicationInvalidError,
+    );
+  });
+
+  it('never carries a field the server decides', () => {
+    const serialised = JSON.stringify(
+      profileReplacement({ publicName: '李老师', capabilityTypes: ['TEACHER'] }),
+    );
+    for (const forbidden of ['approvalStatus', 'searchable', 'userId', 'roles', 'rating']) {
+      expect(serialised).not.toContain(forbidden);
+    }
   });
 });

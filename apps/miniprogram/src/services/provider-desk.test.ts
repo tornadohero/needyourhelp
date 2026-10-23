@@ -13,6 +13,7 @@ import type { Transport, TransportRequest } from '../core/http';
 import {
   newServiceDraft,
   withDuration,
+  withDescription,
   withPriceYuan,
   withSubjectCodes,
   withTitle,
@@ -30,6 +31,8 @@ import {
   myProviderProfile,
   myVerification,
   publishService,
+  replaceProfile,
+  replaceService,
   startOrder,
   submitApplication,
   unpublishService,
@@ -322,5 +325,54 @@ describe('delivery commands', () => {
     const finished = harness([ok({ ...ORDER, status: 'COMPLETED' as const })]);
     await completeOrder(finished.context, 'order-1');
     expect(finished.calls[0]?.url).toBe('https://api.example.com/api/v1/orders/order-1/complete');
+  });
+});
+
+describe('replacements (PUT, because a WeChat client has no PATCH)', () => {
+  it('replaces the whole profile', async () => {
+    const { context, calls } = harness([ok(PROFILE)]);
+
+    await replaceProfile(context, {
+      publicName: '王老师',
+      headline: '高中数学',
+      capabilityTypes: ['TEACHER'],
+    });
+
+    expect(calls[0]?.method).toBe('PUT');
+    expect(calls[0]?.url).toBe('https://api.example.com/api/v1/providers/me?providerType=TUTORING');
+
+    const body = JSON.parse(String(calls[0]?.body));
+    expect(body.publicName).toBe('王老师');
+    // Replacement: the fields the form omitted are sent as null, not left out.
+    expect(body.bio).toBeNull();
+    expect(body.cityCode).toBeNull();
+    expect(body.capabilityTypes).toEqual(['TEACHER']);
+  });
+
+  it('replaces a whole service', async () => {
+    const { context, calls } = harness([ok({ ...SERVICE, title: '高中数学' })]);
+
+    let draft = withTitle(newServiceDraft(), '高中数学');
+    draft = withDuration(draft, 90);
+    draft = withPriceYuan(draft, '300');
+    draft = withSubjectCodes(draft, ['MATH']);
+    draft = withDescription(draft, '竞赛向');
+
+    const replaced = await replaceService(context, 'service-1', draft);
+
+    expect(calls[0]?.method).toBe('PUT');
+    expect(calls[0]?.url).toBe(
+      'https://api.example.com/api/v1/providers/me/services/service-1?providerType=TUTORING',
+    );
+    expect(JSON.parse(String(calls[0]?.body))).toEqual({
+      title: '高中数学',
+      description: '竞赛向',
+      durationMinutes: 90,
+      priceMinor: 30_000,
+      currency: 'CNY',
+      deliveryMode: 'ONLINE',
+      subjectCodes: ['MATH'],
+    });
+    expect(replaced.title).toBe('高中数学');
   });
 });

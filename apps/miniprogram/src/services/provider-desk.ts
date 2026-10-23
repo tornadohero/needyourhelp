@@ -4,6 +4,7 @@ import { describeOrder } from '../core/order-view';
 import type { OrderRowView } from '../core/order-view';
 import {
   applicationRequest,
+  profileReplacement,
   describeProviderDesk,
   describeServiceRow,
   describeSlotRow,
@@ -12,13 +13,14 @@ import {
 import type {
   CreateApplicationBody,
   ProviderApplicationInput,
+  ReplaceProfileBody,
   ProviderDeskView,
   ServiceManageRowView,
   SlotManageRowView,
   VerificationRowView,
 } from '../core/provider-desk';
-import { serviceRequest } from '../core/service-form';
-import type { CreateServiceBody, ServiceDraft } from '../core/service-form';
+import { serviceReplacement, serviceRequest } from '../core/service-form';
+import type { CreateServiceBody, ReplaceServiceBody, ServiceDraft } from '../core/service-form';
 import type {
   AvailabilityListResponse,
   AvailabilitySlotResponse,
@@ -43,6 +45,43 @@ import type {
  */
 
 const PROVIDER_TYPE = 'TUTORING';
+
+export async function replaceProfile(
+  context: MentorContext,
+  input: Parameters<typeof profileReplacement>[0],
+): Promise<ProviderDeskView> {
+  const body: ReplaceProfileBody = profileReplacement(input);
+  const profile = await context.session.withSession((accessToken) =>
+    context.client.put<ProviderProfileResponse>(ROUTES.providerMe, {
+      accessToken,
+      query: { providerType: PROVIDER_TYPE },
+      body,
+    }),
+  );
+  return describeProviderDesk(profile);
+}
+
+/**
+ * `PUT /providers/me/services/:id` — a full replacement.
+ *
+ * WeChat has no PATCH, so an edit is a replacement: what the form does not
+ * carry is cleared, which is why the body is built from the whole draft.
+ */
+export async function replaceService(
+  context: MentorContext,
+  serviceId: string,
+  draft: ServiceDraft,
+): Promise<ServiceManageRowView> {
+  const body: ReplaceServiceBody = serviceReplacement(draft);
+  const service = await context.session.withSession((accessToken) =>
+    context.client.put<ServiceResponse>(fillPath(ROUTES.providerService, { id: serviceId }), {
+      accessToken,
+      query: { providerType: PROVIDER_TYPE },
+      body,
+    }),
+  );
+  return describeServiceRow(service);
+}
 
 /** `GET /providers/me` — the provider record as the platform sees it. */
 export async function myProviderProfile(context: MentorContext): Promise<ProviderDeskView> {

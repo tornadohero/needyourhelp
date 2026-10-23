@@ -3,6 +3,8 @@ import type { OrderResponse } from '@mentor/api-contracts';
 import { describeOrder } from './order-view';
 import type { OrderRowView } from './order-view';
 
+import type { AvatarVisibilityName } from '@mentor/api-contracts';
+
 import type {
   AvailabilitySlotResponse,
   CapabilityTypeName,
@@ -95,6 +97,9 @@ export interface ProviderDeskView {
   id: string;
   name: string;
   headline: string;
+  bio: string;
+  /** Raw values, so an edit form can prefill them without another request. */
+  cityCode: string | null;
   cityText: string;
   serviceModeText: string;
   approvalText: string;
@@ -131,6 +136,8 @@ export function describeProviderDesk(profile: ProviderProfileResponse): Provider
     id: profile.id,
     name: profile.publicName,
     headline: profile.headline ?? '',
+    bio: profile.bio ?? '',
+    cityCode: profile.cityCode,
     cityText: profile.cityCode ?? '未标注城市',
     serviceModeText: SERVICE_MODE_TEXTS[profile.serviceMode],
     approvalText: PROVIDER_APPROVAL_TEXTS[profile.approvalStatus],
@@ -160,11 +167,16 @@ export interface ServiceManageRowView {
   id: string;
   title: string;
   description: string;
+  /** Raw values: an edit form prefills them without another request. */
+  durationMinutes: number;
+  priceMinor: number;
   durationText: string;
   priceText: string;
   statusText: string;
   status: ServiceStatusName;
   termText: string;
+  /** Codes, not names: the server compares codes (T007). */
+  subjectCodes: string[];
   published: boolean;
   canPublish: boolean;
   canUnpublish: boolean;
@@ -176,6 +188,8 @@ export function describeServiceRow(service: ServiceResponse): ServiceManageRowVi
     id: service.id,
     title: service.title,
     description: service.description ?? '',
+    durationMinutes: service.durationMinutes,
+    priceMinor: service.priceMinor,
     durationText: formatDuration(service.durationMinutes),
     priceText: formatMoney(service.priceMinor),
     statusText: SERVICE_STATUS_TEXTS[service.status],
@@ -185,6 +199,7 @@ export function describeServiceRow(service: ServiceResponse): ServiceManageRowVi
       .filter((term) => term.type === 'SUBJECT')
       .map((term) => term.name)
       .join('、'),
+    subjectCodes: service.terms.filter((term) => term.type === 'SUBJECT').map((term) => term.code),
     published,
     canPublish: !published,
     canUnpublish: published,
@@ -390,4 +405,56 @@ export function providerOrdersOnly<T extends { providerId: string }>(
   providerId: string,
 ): T[] {
   return rows.filter((row) => row.providerId === providerId);
+}
+
+/**
+ * `PUT /providers/me` — a full replacement, not a merge.
+ *
+ * WeChat's `wx.request` has no PATCH, so the mini program edits through PUT:
+ * every field the profile owns is sent, and one the body leaves out is cleared
+ * server-side. Nothing here sends `approvalStatus`, `searchable` or a role —
+ * those are never the provider's to write (`AGENTS.md` §7).
+ */
+export interface ReplaceProfileBody {
+  publicName: string;
+  headline: string | null;
+  bio: string | null;
+  avatarVisibility: AvatarVisibilityName;
+  cityCode: string | null;
+  serviceMode: DeliveryModeName;
+  capabilityTypes: CapabilityType[];
+}
+
+export function profileReplacement(input: {
+  publicName: string;
+  headline?: string;
+  bio?: string;
+  avatarVisibility?: AvatarVisibilityName;
+  cityCode?: string;
+  serviceMode?: DeliveryModeName;
+  capabilityTypes?: CapabilityType[];
+}): ReplaceProfileBody {
+  const problems = applicationProblems({
+    publicName: input.publicName,
+    cityCode: input.cityCode,
+    capabilityTypes: input.capabilityTypes,
+  });
+  if (problems.length > 0) {
+    throw new ApplicationInvalidError(problems);
+  }
+
+  const headline = (input.headline ?? '').trim().slice(0, HEADLINE_MAX);
+  const bio = (input.bio ?? '').trim().slice(0, BIO_MAX);
+  const cityCode = (input.cityCode ?? '').trim();
+
+  return {
+    publicName: input.publicName.trim().slice(0, PUBLIC_NAME_MAX),
+    // Absent means "clear it": that is what a replacement is.
+    headline: headline.length > 0 ? headline : null,
+    bio: bio.length > 0 ? bio : null,
+    avatarVisibility: input.avatarVisibility ?? 'PUBLIC',
+    cityCode: cityCode.length > 0 ? cityCode : null,
+    serviceMode: input.serviceMode ?? 'ONLINE',
+    capabilityTypes: input.capabilityTypes ?? [],
+  };
 }

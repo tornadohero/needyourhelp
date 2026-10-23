@@ -78,6 +78,82 @@ export function createWechatTokenStore(): TokenStore {
 }
 
 /**
+ * Pick one document from the device.
+ *
+ * Only metadata comes back: the bytes are read when they are uploaded, and a
+ * document is never written to the client's own storage (`specs/10`).
+ */
+export function chooseDocument(): Promise<{
+  path: string;
+  size: number;
+  mimeType: string;
+} | null> {
+  return new Promise((resolve) => {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sizeType: ['original'],
+      success: (result: {
+        tempFiles?: { tempFilePath: string; size: number; fileType?: string }[];
+      }) => {
+        const file = result.tempFiles?.[0];
+        if (!file) {
+          resolve(null);
+          return;
+        }
+        resolve({
+          path: file.tempFilePath,
+          size: file.size,
+          mimeType: file.fileType === 'video' ? 'video/mp4' : 'image/jpeg',
+        });
+      },
+      fail: () => resolve(null),
+    });
+  });
+}
+
+/** Read a picked file as bytes: no `encoding` means an ArrayBuffer. */
+export function readFileBytes(filePath: string): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    wx.getFileSystemManager().readFile({
+      filePath,
+      success: (result: { data: ArrayBuffer | string }) =>
+        typeof result.data === 'string'
+          ? reject(new Error('expected binary file data'))
+          : resolve(result.data),
+      fail: (error: { errMsg?: string }) => reject(new Error(error.errMsg ?? 'read file failed')),
+    });
+  });
+}
+
+/**
+ * `PUT` bytes to the signed object URL.
+ *
+ * The signed URL is the credential and the headers that came with it are part
+ * of it: they are sent exactly as issued, and nothing else is added. This is
+ * the only request that leaves the platform's own API.
+ */
+export function putBinary(
+  url: string,
+  bytes: ArrayBuffer,
+  headers: Record<string, string>,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url,
+      method: 'PUT',
+      header: headers,
+      data: bytes,
+      success: (response: { statusCode: number }) =>
+        response.statusCode >= 200 && response.statusCode < 300
+          ? resolve()
+          : reject(new Error(`upload failed with ${response.statusCode}`)),
+      fail: (error: { errMsg?: string }) => reject(new Error(error.errMsg ?? 'upload failed')),
+    });
+  });
+}
+
+/**
  * Navigation and feedback.
  *
  * They live here for the same reason the transport does: a page that calls `wx`

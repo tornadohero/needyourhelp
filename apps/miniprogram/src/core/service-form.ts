@@ -170,3 +170,34 @@ export function serviceRequest(draft: ServiceDraft): CreateServiceBody {
     ...(draft.description.length > 0 ? { description: draft.description } : {}),
   };
 }
+
+/**
+ * `PUT /providers/me/services/:id` — a full replacement.
+ *
+ * Same reason as the profile: no PATCH in a WeChat client. The body carries
+ * everything the service owns, so an omitted description is cleared and an
+ * empty `subjectCodes` means "no subjects" — which the tagging rule refuses
+ * (`specs/01-business-rules.md` §Services).
+ */
+export interface ReplaceServiceBody {
+  title: string;
+  description: string | null;
+  durationMinutes: number;
+  priceMinor: number;
+  currency: string;
+  deliveryMode: string;
+  subjectCodes: string[];
+}
+
+export function serviceReplacement(draft: ServiceDraft): ReplaceServiceBody {
+  const created = serviceRequest(draft);
+  return {
+    title: created.title,
+    description: draft.description.length > 0 ? draft.description : null,
+    durationMinutes: created.durationMinutes,
+    priceMinor: created.priceMinor,
+    currency: 'CNY',
+    deliveryMode: 'ONLINE',
+    subjectCodes: created.subjectCodes,
+  };
+}

@@ -9,6 +9,7 @@ import {
   minorToYuan,
   newServiceDraft,
   serviceProblems,
+  serviceReplacement,
   serviceRequest,
   withDescription,
   withDuration,
@@ -152,5 +153,38 @@ describe('serviceRequest', () => {
     } catch (error) {
       expect((error as ServiceInvalidError).problems).toContain('NO_DURATION');
     }
+  });
+});
+
+describe('serviceReplacement', () => {
+  it('is a full replacement: an omitted description is cleared', () => {
+    let draft = withTitle(newServiceDraft(), '初中数学一对一');
+    draft = withDuration(draft, 60);
+    draft = withPriceYuan(draft, '200');
+    draft = withSubjectCodes(draft, ['MATH']);
+
+    expect(serviceReplacement(draft)).toEqual({
+      title: '初中数学一对一',
+      description: null,
+      durationMinutes: 60,
+      priceMinor: 20_000,
+      currency: 'CNY',
+      deliveryMode: 'ONLINE',
+      subjectCodes: ['MATH'],
+    });
+  });
+
+  it('keeps a description that says something', () => {
+    let draft = withTitle(newServiceDraft(), '数学');
+    draft = withDuration(draft, 60);
+    draft = withPriceYuan(draft, '200');
+    draft = withSubjectCodes(draft, ['MATH']);
+    draft = withDescription(draft, '期末冲刺');
+
+    expect(serviceReplacement(draft).description).toBe('期末冲刺');
+  });
+
+  it('refuses an incomplete replacement', () => {
+    expect(() => serviceReplacement(newServiceDraft())).toThrow(ServiceInvalidError);
   });
 });
