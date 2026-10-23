@@ -1,0 +1,95 @@
+<view class="page">
+  <view class="title">导师工作台</view>
+
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <block wx:if="{{!loading && hasProvider && desk}}">
+    <view class="card">
+      <view class="name">{{desk.name}}</view>
+      <view wx:if="{{desk.headline}}" class="hint">{{desk.headline}}</view>
+      <!-- Approval and searchable are server-owned: read, never written. -->
+      <view class="hint">审核：{{desk.approvalText}} · {{desk.searchableText}}</view>
+      <view class="hint">{{desk.cityText}} · {{desk.serviceModeText}}</view>
+      <view class="hint">{{desk.ratingText}} · {{desk.completedText}}</view>
+    </view>
+
+    <view class="card" wx:if="{{desk.capabilities.length > 0}}">
+      <view class="section">辅导身份</view>
+      <view class="cap" wx:for="{{desk.capabilities}}" wx:key="index">
+        <view>{{item.typeText}}</view>
+        <view class="hint">{{item.statusText}} · {{item.verificationText}} · {{item.complianceText}}</view>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{verifications.length > 0}}">
+      <view class="section">验证状态</view>
+      <view class="ver" wx:for="{{verifications}}" wx:key="id">
+        <view>{{item.typeText}} · {{item.statusText}}</view>
+        <view class="hint">{{item.documentText}} · {{item.submittedText}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{notice}}" class="notice">{{notice}}</view>
+    <view wx:if="{{error}}" class="notice">{{error}}</view>
+
+    <button wx:if="{{desk.canSubmit}}" class="button" type="primary" loading="{{acting}}" bindtap="onSubmitForReview">
+      提交审核
+    </button>
+    <button class="button" bindtap="onOpenServices">服务管理</button>
+    <button class="button" bindtap="onOpenSlots">可预约时段</button>
+    <button class="button" bindtap="onOpenOrders">我的接单</button>
+    <button class="button" bindtap="onOpenReviews">我的评价</button>
+  </block>
+
+  <block wx:if="{{!loading && !hasProvider}}">
+    <view class="card">
+      <view class="section">成为导师</view>
+      <view class="hint">提交入驻信息后由平台审核，审核通过才能发布服务。</view>
+
+      <input
+        class="input"
+        placeholder="对外展示的姓名"
+        value="{{publicName}}"
+        data-field="publicName"
+        bindinput="onInput"
+      />
+      <input
+        class="input"
+        placeholder="一句话介绍（可选）"
+        value="{{headline}}"
+        data-field="headline"
+        bindinput="onInput"
+      />
+      <input
+        class="input"
+        placeholder="城市编号（可选，如 BEIJING）"
+        value="{{cityCode}}"
+        data-field="cityCode"
+        bindinput="onInput"
+      />
+      <textarea
+        class="note"
+        placeholder="个人介绍（可选）"
+        value="{{bio}}"
+        data-field="bio"
+        bindinput="onInput"
+      />
+
+      <view class="section">辅导身份（至少一项）</view>
+      <view
+        class="option {{item.on ? 'option-on' : ''}}"
+        wx:for="{{capabilities}}"
+        wx:key="type"
+        data-type="{{item.type}}"
+        bindtap="onToggleCapability"
+      >
+        {{item.label}}
+      </view>
+    </view>
+
+    <view wx:if="{{notice}}" class="notice">{{notice}}</view>
+
+    <button class="button" type="primary" loading="{{acting}}" bindtap="onApply">提交入驻申请</button>
+    <button class="button" size="mini" bindtap="onRetry">刷新</button>
+  </block>
+</view>

@@ -1,0 +1,61 @@
+<view class="page">
+  <view class="title">可预约时段</view>
+
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <block wx:else>
+    <view class="card">
+      <view class="section">已发布的时段</view>
+      <view wx:if="{{slots.length === 0}}" class="hint">还没有可预约时段。</view>
+      <view class="slot" wx:for="{{slots}}" wx:key="id">
+        <view>{{item.rangeText}}</view>
+        <!-- A taken window belongs to a booking now: it cannot be withdrawn. -->
+        <button
+          wx:if="{{item.deletable}}"
+          class="button"
+          size="mini"
+          data-id="{{item.id}}"
+          bindtap="onDeleteSlot"
+        >删除</button>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section">新增时段</view>
+
+      <picker mode="date" value="{{day}}" bindchange="onPickDay">
+        <view class="picker">日期：{{day}}</view>
+      </picker>
+      <picker mode="time" value="{{startTime}}" bindchange="onPickTime">
+        <view class="picker">开始：{{startTime}}</view>
+      </picker>
+
+      <view class="chips">
+        <view
+          class="chip {{durationMinutes === 60 ? 'chip-on' : ''}}"
+          data-minutes="60"
+          bindtap="onSelectDuration"
+        >60 分钟</view>
+        <view
+          class="chip {{durationMinutes === 90 ? 'chip-on' : ''}}"
+          data-minutes="90"
+          bindtap="onSelectDuration"
+        >90 分钟</view>
+        <view
+          class="chip {{durationMinutes === 120 ? 'chip-on' : ''}}"
+          data-minutes="120"
+          bindtap="onSelectDuration"
+        >120 分钟</view>
+      </view>
+
+      <button class="button" type="primary" loading="{{acting}}" bindtap="onAddSlot">新增时段</button>
+    </view>
+
+    <view wx:if="{{notice}}" class="notice">{{notice}}</view>
+  </block>
+</view>

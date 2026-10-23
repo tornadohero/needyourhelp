@@ -1,3 +1,4 @@
+import { navigateTo } from '../../src/platform/wechat';
 import { ensureContext } from '../../src/app-context';
 import type { MentorContext } from '../../src/app-context';
 import { describeAccount } from '../../src/core/account';
@@ -89,6 +90,16 @@ const pageOptions = {
     } catch (error) {
       this.setData({ loading: false, error: errorMessageOf(error) });
     }
+  },
+
+  /**
+   * Open the provider desk.
+   *
+   * The desk is reachable by anyone: whether an account may publish is the
+   * server's answer, not something the client decides up front (`specs/07`).
+   */
+  onOpenDesk(this: PageInstance): void {
+    navigateTo('/pages/provider-desk/provider-desk');
   },
 
   async onRetry(this: PageInstance): Promise<void> {

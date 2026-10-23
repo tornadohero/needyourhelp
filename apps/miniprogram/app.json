@@ -5,7 +5,14 @@
     "pages/messages/messages",
     "pages/orders/orders",
     "pages/me/me",
-    "pages/provider/provider"
+    "pages/provider/provider",
+    "pages/booking/booking",
+    "pages/order-detail/order-detail",
+    "pages/provider-desk/provider-desk",
+    "pages/provider-services/provider-services",
+    "pages/provider-slots/provider-slots",
+    "pages/provider-orders/provider-orders",
+    "pages/provider-reviews/provider-reviews"
   ],
   "window": {
     "navigationBarTitleText": "导师平台",

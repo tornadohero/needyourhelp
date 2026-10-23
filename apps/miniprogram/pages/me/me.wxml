@@ -64,5 +64,9 @@
     </view>
 
     <button class="button" type="warn" bindtap="onSignOut">退出登录</button>
+    <view class="card">
+      <view class="section">导师</view>
+      <button class="button" bindtap="onOpenDesk">导师工作台</button>
+    </view>
   </block>
 </view>

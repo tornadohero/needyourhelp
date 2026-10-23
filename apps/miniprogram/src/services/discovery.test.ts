@@ -8,6 +8,7 @@ import {
   loadMoreProviders,
   loadProviderDetail,
   loadProviders,
+  providerReviews,
   searchProviders,
 } from './discovery';
 
@@ -169,5 +170,46 @@ describe('loadProviderDetail', () => {
     await expect(loadProviderDetail(context, 'missing')).rejects.toMatchObject({
       code: 'NOT_FOUND',
     });
+  });
+});
+
+describe('providerReviews', () => {
+  function reviewPage(ids: string[], total: number): Answer {
+    return {
+      status: 200,
+      body: {
+        data: {
+          items: ids.map((id) => ({
+            id,
+            rating: 5,
+            content: id === 'hidden' ? null : '讲得清楚',
+            createdAt: '2026-10-20T02:00:00.000Z',
+          })),
+          total,
+          page: 1,
+          pageSize: 20,
+        },
+      },
+    };
+  }
+
+  it('reads the public list: what a parent sees is what the provider sees', async () => {
+    const { context, calls } = harness([reviewPage(['review-1'], 1)]);
+
+    const page = await providerReviews(context, 'provider-1', { page: 1, pageSize: 20 });
+
+    expect(calls[0]?.url).toBe(
+      'https://api.example.com/api/v1/providers/provider-1/reviews?page=1&pageSize=20',
+    );
+    expect(page.items[0]?.ratingText).toBe('5 星');
+    expect(page.items[0]?.content).toBe('讲得清楚');
+  });
+
+  it('shows nothing in place of a hidden review', async () => {
+    const { context } = harness([reviewPage(['hidden'], 1)]);
+
+    const page = await providerReviews(context, 'provider-1');
+
+    expect(page.items[0]?.content).toBe('');
   });
 });

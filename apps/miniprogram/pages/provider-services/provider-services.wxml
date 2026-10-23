@@ -1,0 +1,90 @@
+<view class="page">
+  <view class="title">服务管理</view>
+
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <block wx:else>
+    <view class="card">
+      <view class="section">我的服务</view>
+      <view wx:if="{{services.length === 0}}" class="hint">还没有服务，先在下面创建一个。</view>
+      <view class="service" wx:for="{{services}}" wx:key="id">
+        <view>{{item.title}}</view>
+        <!-- The provider's own price, shown as the server stored it. -->
+        <view class="hint">{{item.durationText}} · {{item.priceText}} · {{item.statusText}}</view>
+        <view wx:if="{{item.termText}}" class="hint">科目：{{item.termText}}</view>
+        <button wx:if="{{item.canPublish}}" class="button" size="mini" data-id="{{item.id}}" bindtap="onPublish">
+          发布
+        </button>
+        <button wx:if="{{item.canUnpublish}}" class="button" size="mini" data-id="{{item.id}}" bindtap="onUnpublish">
+          下架
+        </button>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section">新建服务</view>
+
+      <input
+        class="input"
+        placeholder="服务名称"
+        value="{{title}}"
+        data-field="title"
+        bindinput="onInput"
+      />
+      <textarea
+        class="note"
+        placeholder="服务说明（可选）"
+        value="{{description}}"
+        data-field="description"
+        bindinput="onInput"
+      />
+
+      <view class="section">时长</view>
+      <view class="chips">
+        <view
+          class="chip {{durationMinutes === 60 ? 'chip-on' : ''}}"
+          data-minutes="60"
+          bindtap="onSelectDuration"
+        >60 分钟</view>
+        <view
+          class="chip {{durationMinutes === 90 ? 'chip-on' : ''}}"
+          data-minutes="90"
+          bindtap="onSelectDuration"
+        >90 分钟</view>
+        <view
+          class="chip {{durationMinutes === 120 ? 'chip-on' : ''}}"
+          data-minutes="120"
+          bindtap="onSelectDuration"
+        >120 分钟</view>
+      </view>
+
+      <!-- Priced in yuan here; it is sent as integer minor units. -->
+      <input
+        class="input"
+        placeholder="价格（元）"
+        type="digit"
+        value="{{priceYuan}}"
+        data-field="price"
+        bindinput="onInput"
+      />
+      <input
+        class="input"
+        placeholder="科目代码，逗号分隔（如 MATH,ENGLISH）"
+        value="{{subjectText}}"
+        data-field="subjects"
+        bindinput="onInput"
+      />
+
+      <view wx:if="{{problem}}" class="notice">{{problem}}</view>
+
+      <button class="button" type="primary" loading="{{creating}}" bindtap="onCreate">创建服务</button>
+    </view>
+
+    <view wx:if="{{notice}}" class="notice">{{notice}}</view>
+  </block>
+</view>

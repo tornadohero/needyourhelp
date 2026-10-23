@@ -1,0 +1,44 @@
+<view class="page">
+  <view class="title">我的接单</view>
+
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:elif="{{empty}}" class="state">还没有需要交付的订单。</view>
+
+  <block wx:else>
+    <view class="card" wx:for="{{orders}}" wx:key="id">
+      <view class="row" data-id="{{item.id}}" bindtap="onOpenOrder">
+        <text>{{item.title}}</text>
+        <text class="status">{{item.statusText}}</text>
+      </view>
+      <view class="hint">{{item.timeText}}</view>
+      <view class="row">
+        <text class="hint">订单号 {{item.orderNo}}</text>
+        <text class="total">{{item.amountText}}</text>
+      </view>
+
+      <!-- One command per state: accept, start, finish. No status is edited. -->
+      <button
+        wx:if="{{item.actionText}}"
+        class="button"
+        size="mini"
+        type="primary"
+        loading="{{acting}}"
+        data-id="{{item.id}}"
+        data-action="{{item.action}}"
+        bindtap="onCommand"
+      >{{item.actionText}}</button>
+    </view>
+
+    <view wx:if="{{hasMore}}" class="state">
+      <button class="button" size="mini" loading="{{loading}}" bindtap="onLoadMore">加载更多</button>
+    </view>
+  </block>
+
+  <view wx:if="{{notice}}" class="notice">{{notice}}</view>
+</view>

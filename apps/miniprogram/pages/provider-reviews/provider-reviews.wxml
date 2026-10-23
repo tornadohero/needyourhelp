@@ -1,0 +1,28 @@
+<view class="page">
+  <view class="title">我的评价</view>
+  <view wx:if="{{total > 0}}" class="hint">共 {{total}} 条</view>
+
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:elif="{{empty}}" class="state">还没有评价。</view>
+
+  <block wx:else>
+    <view class="card" wx:for="{{reviews}}" wx:key="id">
+      <view>{{item.ratingText}}</view>
+      <!-- A hidden review has no content server-side; nothing is shown instead. -->
+      <view wx:if="{{item.content}}">{{item.content}}</view>
+      <view class="hint">{{item.createdText}}</view>
+    </view>
+
+    <view wx:if="{{hasMore}}" class="state">
+      <button class="button" size="mini" loading="{{loadingMore}}" bindtap="onLoadMore">
+        加载更多
+      </button>
+    </view>
+  </block>
+</view>
