@@ -33,7 +33,10 @@ export const ROUTES = {
   providerMe: '/providers/me',
   providerSubmit: '/providers/me/submit',
   providerMyServices: '/providers/me/services',
+  providerServicePublish: '/providers/me/services/:id/publish',
+  providerServiceUnpublish: '/providers/me/services/:id/unpublish',
   providerMyAvailability: '/providers/me/availability',
+  providerSlot: '/providers/me/availability/:id',
 
   conversations: '/conversations',
   conversationMessages: '/conversations/:id/messages',
@@ -41,6 +44,10 @@ export const ROUTES = {
 
   orders: '/orders',
   orderDetail: '/orders/:id',
+  orderCancel: '/orders/:id/cancel',
+  orderConfirm: '/orders/:id/confirm',
+  orderStart: '/orders/:id/start',
+  orderComplete: '/orders/:id/complete',
   paymentSession: '/orders/:id/payment-session',
   paymentStatus: '/orders/:id/payment-status',
 

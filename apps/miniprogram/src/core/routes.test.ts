@@ -30,9 +30,17 @@ describe('ROUTES', () => {
     expect(ROUTES.providerSubmit).toBe(ENDPOINTS.providerSubmit);
     expect(ROUTES.providerMyServices).toBe(ENDPOINTS.providerServices);
     expect(ROUTES.providerMyAvailability).toBe(ENDPOINTS.providerAvailability);
+    expect(ROUTES.providerServicePublish).toBe(ENDPOINTS.providerServicePublish);
+    expect(ROUTES.providerServiceUnpublish).toBe(ENDPOINTS.providerServiceUnpublish);
+    expect(ROUTES.providerSlot).toBe(ENDPOINTS.providerSlot);
     expect(ROUTES.conversations).toBe(ENDPOINTS.conversations);
     expect(ROUTES.conversationMessages).toBe(ENDPOINTS.conversationMessages);
     expect(ROUTES.orders).toBe(ENDPOINTS.orders);
+    expect(ROUTES.orderDetail).toBe(ENDPOINTS.orderDetail);
+    expect(ROUTES.orderCancel).toBe(ENDPOINTS.orderCancel);
+    expect(ROUTES.orderConfirm).toBe(ENDPOINTS.orderConfirm);
+    expect(ROUTES.orderStart).toBe(ENDPOINTS.orderStart);
+    expect(ROUTES.orderComplete).toBe(ENDPOINTS.orderComplete);
     expect(ROUTES.paymentSession).toBe(ENDPOINTS.paymentSession);
     expect(ROUTES.paymentStatus).toBe(ENDPOINTS.paymentStatus);
     expect(ROUTES.orderRefundRequest).toBe(ENDPOINTS.orderRefundRequest);

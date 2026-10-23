@@ -27,9 +27,20 @@ export const ENDPOINTS = {
   providerMe: '/providers/me',
   providerSubmit: '/providers/me/submit',
   providerServices: '/providers/me/services',
+  /** Service lifecycle commands: the server still gates them on approval. */
+  providerServicePublish: '/providers/me/services/:id/publish',
+  providerServiceUnpublish: '/providers/me/services/:id/unpublish',
   providerAvailability: '/providers/me/availability',
+  providerSlot: '/providers/me/availability/:id',
   conversations: '/conversations',
   orders: '/orders',
+  orderDetail: '/orders/:id',
+  /** Commands, never a status write (`specs/06`): cancel is the buyer's one. */
+  orderCancel: '/orders/:id/cancel',
+  /** The provider's three commands (`specs/06` §Order). */
+  orderConfirm: '/orders/:id/confirm',
+  orderStart: '/orders/:id/start',
+  orderComplete: '/orders/:id/complete',
   paymentSession: '/orders/:id/payment-session',
   paymentStatus: '/orders/:id/payment-status',
   paymentNotify: '/payments/wechat/notify',
