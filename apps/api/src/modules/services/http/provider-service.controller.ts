@@ -1,4 +1,5 @@
 import {
+  Put,
   Body,
   Controller,
   Get,
@@ -26,7 +27,12 @@ import { translate } from './service-error-translator';
 // Value import on purpose: `ValidationPipe` needs the DTO class at runtime
 // through the emitted `design:paramtypes` metadata.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import { CreateServiceDto, ProviderServicesQueryDto, UpdateServiceDto } from './dto/service.dto';
+import {
+  CreateServiceDto,
+  ProviderServicesQueryDto,
+  ReplaceServiceDto,
+  UpdateServiceDto,
+} from './dto/service.dto';
 
 /**
  * Provider service endpoints (`specs/05-api-spec.md` §Services).
@@ -108,6 +114,42 @@ export class ProviderServiceController {
           gradeCodes: body.gradeCodes,
           skillCodes: body.skillCodes,
           cityCodes: body.cityCodes,
+        },
+      );
+      return toServiceResponse(service);
+    });
+  }
+
+  /**
+   * `PUT /providers/me/services/:id` — the same update as `PATCH`, as a
+   * replacement.
+   *
+   * WeChat's `wx.request` has no PATCH, so the mini program edits through PUT:
+   * omitted optional fields are cleared, required ones are refused when absent.
+   */
+  @Put(':id')
+  async replace(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param('id') id: string,
+    @Query() query: ProviderServicesQueryDto,
+    @Body() body: ReplaceServiceDto,
+  ): Promise<ServiceResponse> {
+    return translate(async () => {
+      const service = await this.services.update(
+        principal.userId,
+        (query.providerType ?? 'TUTORING') as ProviderTypeName,
+        id,
+        {
+          title: body.title,
+          description: body.description ?? null,
+          durationMinutes: body.durationMinutes,
+          priceMinor: body.priceMinor,
+          currency: body.currency ?? 'CNY',
+          deliveryMode: body.deliveryMode as DeliveryModeName | undefined,
+          subjectCodes: body.subjectCodes ?? [],
+          gradeCodes: body.gradeCodes ?? [],
+          skillCodes: body.skillCodes ?? [],
+          cityCodes: body.cityCodes ?? [],
         },
       );
       return toServiceResponse(service);

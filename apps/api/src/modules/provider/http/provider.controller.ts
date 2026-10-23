@@ -6,6 +6,7 @@ import {
   Inject,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -25,6 +26,7 @@ import { RateLimit } from '../../../common/security/rate-limit.interceptor';
 import {
   CreateProviderApplicationDto,
   ProviderQueryDto,
+  ReplaceProviderProfileDto,
   UpdateProviderProfileDto,
 } from './dto/provider.dto';
 
@@ -99,6 +101,39 @@ export class ProviderController {
           ...(body.cityCode === undefined ? {} : { cityCode: body.cityCode }),
           ...(body.serviceMode === undefined ? {} : { serviceMode: body.serviceMode }),
           ...(body.capabilityTypes === undefined ? {} : { capabilityTypes: body.capabilityTypes }),
+        },
+        query.providerType ?? 'TUTORING',
+      );
+      return toProviderProfileResponse(application.profile, application.capabilities);
+    });
+  }
+
+  /**
+   * `PUT /providers/me` — the same update as `PATCH`, as a full replacement.
+   *
+   * WeChat's `wx.request` has no PATCH (`apps/miniprogram/src/platform/wechat.ts`
+   * refuses to downgrade it), so the mini program edits through PUT: an omitted
+   * optional field means "clear it", and an omitted required one is refused.
+   */
+  @Put('me')
+  @UseGuards(JwtAuthGuard)
+  async replaceMyApplication(
+    @CurrentUser() principal: AuthPrincipal,
+    @Query() query: ProviderQueryDto,
+    @Body() body: ReplaceProviderProfileDto,
+  ): Promise<ProviderProfileResponse> {
+    return translate(async () => {
+      const application = await this.applications.updateMyApplication(
+        principal.userId,
+        {
+          publicName: body.publicName,
+          // Replacement, not merge: what the body does not carry is removed.
+          headline: body.headline ?? null,
+          bio: body.bio ?? null,
+          avatarVisibility: body.avatarVisibility ?? 'PUBLIC',
+          cityCode: body.cityCode ?? null,
+          serviceMode: body.serviceMode ?? 'ONLINE',
+          capabilityTypes: body.capabilityTypes,
         },
         query.providerType ?? 'TUTORING',
       );

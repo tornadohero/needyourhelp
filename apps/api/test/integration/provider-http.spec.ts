@@ -150,7 +150,7 @@ describeWithDatabase('provider HTTP endpoints', () => {
   }
 
   async function request<T>(
-    method: 'GET' | 'POST' | 'PATCH',
+    method: 'GET' | 'POST' | 'PATCH' | 'PUT',
     path: string,
     options: { token?: string; body?: unknown } = {},
   ): Promise<{ status: number; body: T }> {
@@ -191,6 +191,8 @@ describeWithDatabase('provider HTTP endpoints', () => {
       userId: string;
       providerType: string;
       publicName: string;
+      headline: string | null;
+      bio: string | null;
       approvalStatus: string;
       searchable: boolean;
       serviceMode: string;
@@ -351,6 +353,42 @@ describeWithDatabase('provider HTTP endpoints', () => {
 
     const resubmit = await request<ErrorBody>('POST', '/providers/me/submit', { token });
     expect(resubmit.status).toBe(400);
+  });
+
+  it('replaces the whole profile with PUT, clearing what the body omits', async () => {
+    const { token } = await login();
+    await request<ProviderBody>('POST', '/providers/applications', { token, body: APPLICATION });
+
+    const replaced = await request<ProviderBody>('PUT', '/providers/me', {
+      token,
+      body: { publicName: '王老师', capabilityTypes: ['TEACHER'] },
+    });
+    expect(replaced.status).toBe(200);
+    expect(replaced.body.data.publicName).toBe('王老师');
+    // Replacement, not merge: the headline and city the POST carried are gone.
+    expect(replaced.body.data.headline).toBeNull();
+    expect(replaced.body.data.cityCode).toBeNull();
+    expect(replaced.body.data.capabilities.map((c) => c.capabilityType)).toEqual(['TEACHER']);
+
+    // The fields the server decides are still refused on PUT too.
+    const tampered = await request<ErrorBody>('PUT', '/providers/me', {
+      token,
+      body: {
+        publicName: '王老师',
+        capabilityTypes: ['TEACHER'],
+        approvalStatus: 'APPROVED',
+        searchable: true,
+      },
+    });
+    expect(tampered.status).toBe(400);
+    expect(tampered.body.error.code).toBe('VALIDATION_ERROR');
+
+    // A required field left out is refused, not silently defaulted.
+    const incomplete = await request<ErrorBody>('PUT', '/providers/me', {
+      token,
+      body: { publicName: '' },
+    });
+    expect(incomplete.status).toBe(400);
   });
 
   it('blocks publishing until an admin approves (acceptance criterion)', async () => {

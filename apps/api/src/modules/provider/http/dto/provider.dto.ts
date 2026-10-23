@@ -72,6 +72,53 @@ export class CreateProviderApplicationDto {
   readonly capabilityTypes!: CapabilityTypeName[];
 }
 
+/**
+ * `PUT /providers/me` — full replacement, for clients that cannot send PATCH.
+ *
+ * `wx.request` in a WeChat mini program has no PATCH, and downgrading to POST
+ * would change the meaning of a write, so the platform offers PUT with the same
+ * path. The semantics are explicit: what the body omits is **cleared**, and the
+ * fields the server decides (approval, `searchable`, capabilities' state) are
+ * still not accepted here (`AGENTS.md` §7).
+ */
+export class ReplaceProviderProfileDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(64)
+  readonly publicName!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  readonly headline?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  readonly bio?: string | null;
+
+  @IsOptional()
+  @IsEnum(AVATAR_VISIBILITIES)
+  readonly avatarVisibility?: AvatarVisibilityName;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  @Matches(/^[A-Z0-9_-]+$/)
+  readonly cityCode?: string | null;
+
+  @IsOptional()
+  @IsEnum(DELIVERY_MODES)
+  readonly serviceMode?: DeliveryModeName;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(CAPABILITY_TYPES.length)
+  @ArrayUnique()
+  @IsEnum(CAPABILITY_TYPES, { each: true })
+  readonly capabilityTypes!: CapabilityTypeName[];
+}
+
 /** `PATCH /providers/me`. */
 export class UpdateProviderProfileDto {
   @IsOptional()

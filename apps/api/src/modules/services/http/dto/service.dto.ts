@@ -104,6 +104,77 @@ export class CreateServiceDto {
   readonly cityCodes?: string[];
 }
 
+/**
+ * `PUT /providers/me/services/:id` — full replacement of a service.
+ *
+ * Same reason as `PUT /providers/me`: a WeChat client cannot send PATCH. What
+ * the body omits is cleared — a description left out is removed, and an empty
+ * `subjectCodes` means "no subjects", which the tagging rule then refuses
+ * (`specs/01` §Services). Money stays integer minor units (T009).
+ */
+export class ReplaceServiceDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(MAX_SERVICE_TITLE_LENGTH)
+  readonly title!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(MAX_SERVICE_DESCRIPTION_LENGTH)
+  readonly description?: string | null;
+
+  @IsInt()
+  @Min(MIN_SERVICE_DURATION_MINUTES)
+  @Max(MAX_SERVICE_DURATION_MINUTES)
+  readonly durationMinutes!: number;
+
+  @IsInt()
+  @Min(MIN_SERVICE_PRICE_MINOR)
+  @Max(MAX_SERVICE_PRICE_MINOR)
+  readonly priceMinor!: number;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z]{3}$/)
+  readonly currency?: string;
+
+  @IsOptional()
+  @IsEnum(DELIVERY_MODES)
+  readonly deliveryMode?: DeliveryModeName;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_TERMS_PER_TYPE)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @Matches(TERM_CODE_PATTERN, { each: true })
+  readonly subjectCodes?: string[] | null;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_TERMS_PER_TYPE)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @Matches(TERM_CODE_PATTERN, { each: true })
+  readonly gradeCodes?: string[] | null;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_TERMS_PER_TYPE)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @Matches(TERM_CODE_PATTERN, { each: true })
+  readonly skillCodes?: string[] | null;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_TERMS_PER_TYPE)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @Matches(TERM_CODE_PATTERN, { each: true })
+  readonly cityCodes?: string[] | null;
+}
+
 /** `PATCH /providers/me/services/:id`: every field is optional. */
 export class UpdateServiceDto {
   @IsOptional()

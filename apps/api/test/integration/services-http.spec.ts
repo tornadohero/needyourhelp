@@ -199,7 +199,7 @@ describeWithDatabase('provider service HTTP endpoints', () => {
   }
 
   async function request<T>(
-    method: 'GET' | 'POST' | 'PATCH',
+    method: 'GET' | 'POST' | 'PATCH' | 'PUT',
     path: string,
     options: { token?: string; body?: unknown } = {},
   ): Promise<{ status: number; body: T; raw: string }> {
@@ -422,6 +422,56 @@ describeWithDatabase('provider service HTTP endpoints', () => {
       expect(unknown.status).toBe(404);
       expect(unknown.body.error.code).toBe('NOT_FOUND');
     }
+  });
+
+  it('replaces a whole service with PUT, clearing what the body omits', async () => {
+    const owner = await login();
+    const providerId = await becomeProvider(owner.token);
+    const created = await request<ServiceBody>('POST', '/providers/me/services', {
+      token: owner.token,
+      body: validService({ description: '原来的说明' }),
+    });
+
+    const replaced = await request<ServiceBody>(
+      'PUT',
+      `/providers/me/services/${created.body.data.id}`,
+      {
+        token: owner.token,
+        body: {
+          title: '数学冲刺班',
+          durationMinutes: 90,
+          priceMinor: 30_000,
+          subjectCodes: [SUBJECT],
+        },
+      },
+    );
+    expect(replaced.status).toBe(200);
+    expect(replaced.body.data.title).toBe('数学冲刺班');
+    expect(replaced.body.data.durationMinutes).toBe(90);
+    expect(replaced.body.data.priceMinor).toBe(30_000);
+    // Replacement, not merge: the description the POST carried is gone.
+    expect(replaced.body.data.description).toBeNull();
+
+    // A published service is not editable: it must be unpublished first.
+    await submitApplication(owner.token);
+    const admin = await loginAsAdmin();
+    await approveProvider(admin.token, providerId);
+    await approveVerifications(providerId);
+    const published = await request<ServiceBody>(
+      'POST',
+      `/providers/me/services/${created.body.data.id}/publish`,
+      { token: owner.token },
+    );
+    expect(published.status).toBe(200);
+    const frozen = await request<ErrorBody>(
+      'PUT',
+      `/providers/me/services/${created.body.data.id}`,
+      {
+        token: owner.token,
+        body: { title: '改名字', durationMinutes: 60, priceMinor: 1_000, subjectCodes: [SUBJECT] },
+      },
+    );
+    expect(frozen.status).toBe(400);
   });
 
   it('publishes only an approved provider, and only once', async () => {
