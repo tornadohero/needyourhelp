@@ -1,0 +1,20 @@
+{
+  "name": "@mentor/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mentor/admin": "workspace:*",
+    "@mentor/api-contracts": "workspace:*",
+    "@mentor/miniprogram": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/wechat-miniprogram": "^3.4.10",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.0"
+  }
+}
