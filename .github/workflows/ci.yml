@@ -97,3 +97,6 @@ jobs:
 
       - name: End-to-end critical flows (specs/14)
         run: pnpm test:e2e
+
+      - name: Three-end end-to-end (api + mini program + admin)
+        run: pnpm test:e2e-three
