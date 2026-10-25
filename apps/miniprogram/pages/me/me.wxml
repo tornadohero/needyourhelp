@@ -48,19 +48,23 @@
     <view class="card">
       <view class="section">同意与隐私</view>
       <view wx:if="{{consents.length === 0}}" class="hint">还没有任何同意记录。</view>
-      <view wx:else class="consent" wx:for="{{consents}}" wx:key="type">
-        <view class="row">
-          <text>{{item.label}}（v{{item.policyVersion}}）</text>
-          <text class="hint">{{item.active ? '已同意' : '已撤回'}}</text>
+      <!-- `wx:else` 与 `wx:for` 不能写在同一个节点上：编译器会报
+           "wx:if not found"。外层 block 负责分支，内层节点负责循环。 -->
+      <block wx:else>
+        <view class="consent" wx:for="{{consents}}" wx:key="type">
+          <view class="row">
+            <text>{{item.label}}（v{{item.policyVersion}}）</text>
+            <text class="hint">{{item.active ? '已同意' : '已撤回'}}</text>
+          </view>
+          <button
+            wx:if="{{item.active}}"
+            class="button"
+            size="mini"
+            data-type="{{item.type}}"
+            bindtap="onRevokeConsent"
+          >撤回</button>
         </view>
-        <button
-          wx:if="{{item.active}}"
-          class="button"
-          size="mini"
-          data-type="{{item.type}}"
-          bindtap="onRevokeConsent"
-        >撤回</button>
-      </view>
+      </block>
     </view>
 
     <button class="button" type="warn" bindtap="onSignOut">退出登录</button>

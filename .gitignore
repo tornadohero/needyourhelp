@@ -37,3 +37,6 @@ pnpm-debug.log*
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+
+# WeChat DevTools per-machine settings
+**/project.private.config.json
