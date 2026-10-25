@@ -1,5 +1,17 @@
 import type { DeliveryModeName, ProviderSortName, ProviderTypeName } from '@mentor/api-contracts';
-import { DELIVERY_MODES, PROVIDER_SORTS } from '@mentor/api-contracts';
+
+/**
+ * Mirrors the contract's `DELIVERY_MODES` / `PROVIDER_SORTS` (`@mentor/api-contracts`).
+ *
+ * These are the only contract **values** the client needs at runtime, and the
+ * devtools cannot resolve a workspace npm package — one unresolved `require`
+ * used to blank every page. So they live here as literals and a drift test
+ * (`filters.test.ts` §contract drift) fails if the contract ever changes them.
+ * Everything else this app takes from the contract is `import type`, which the
+ * TypeScript compiler erases.
+ */
+export const DELIVERY_MODES = ['ONLINE', 'OFFLINE', 'HYBRID'] as const;
+export const PROVIDER_SORTS = ['relevance', 'rating', 'newest'] as const;
 
 /**
  * Search filters for `GET /providers` (T030).

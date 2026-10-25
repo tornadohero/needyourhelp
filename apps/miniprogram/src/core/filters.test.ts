@@ -1,13 +1,30 @@
 import { describe, expect, it } from 'vitest';
 
+// The Node test can read the real contract; the app itself must not require it.
+import {
+  DELIVERY_MODES as CONTRACT_DELIVERY_MODES,
+  PROVIDER_SORTS as CONTRACT_PROVIDER_SORTS,
+} from '@mentor/api-contracts';
+
 import {
   DEFAULT_FILTER,
+  DELIVERY_MODES,
+  PROVIDER_SORTS,
   activeFilterCount,
   filterSummary,
   isDefaultFilter,
   normalizeFilter,
   toSearchQuery,
 } from './filters';
+
+describe('contract drift', () => {
+  it('the locally mirrored values stay identical to the contract', () => {
+    // The app ships literals because devtools cannot resolve the workspace
+    // package; this test is the thing that keeps the copy honest.
+    expect([...DELIVERY_MODES]).toEqual([...CONTRACT_DELIVERY_MODES]);
+    expect([...PROVIDER_SORTS]).toEqual([...CONTRACT_PROVIDER_SORTS]);
+  });
+});
 
 describe('normalizeFilter', () => {
   it('starts from the documented defaults', () => {
