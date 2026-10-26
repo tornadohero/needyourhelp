@@ -26,7 +26,8 @@
     "prisma:seed": "prisma db seed",
     "prisma:reset": "prisma migrate reset --force",
     "verify": "pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm test:integration && pnpm test:e2e && pnpm test:e2e-three",
-    "seed:demo": "tsx prisma/seed-demo.ts"
+    "seed:demo": "tsx prisma/seed-demo.ts",
+    "admin:credential": "tsx prisma/admin-credential.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

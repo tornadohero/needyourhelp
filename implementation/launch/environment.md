@@ -137,6 +137,11 @@ TOKEN=$(curl -s -X POST http://127.0.0.1:3000/api/v1/auth/wechat/login \
 curl -s -X POST http://127.0.0.1:3000/api/v1/admin/bootstrap -H "authorization: Bearer $TOKEN"
 ```
 
+> 开发库跑过基础 seed 时，`Platform Admin` 已持有 ADMIN，`bootstrap` 会以
+> `FORBIDDEN / An administrator already exists.` 拒绝重复引导——这是预期行为。
+> 此时用 `pnpm admin:credential <用户名> <密码>`（密码 ≥ 12 位）给该账号签发控制台
+> 凭据（走服务端自己的 scrypt），然后到管理台登录即可。管理台：`pnpm --filter @mentor/admin dev -- -p 3001`。
+
 之后的三步（入驻与审核、发布与预约、支付与交付）在管理台与小程序里点击完成，或者交给自动化：
 
 ```bash
