@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import { NavLink } from '../../src/components/nav-link';
 import { readSession } from '../../src/lib/server';
 
 const LINKS = [
@@ -35,11 +36,9 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
       <nav className="nav">
         <div className="brand">导师平台 · 运营后台</div>
         {LINKS.map((link) => (
-          <Link key={link.href} href={link.href}>
-            {link.label}
-          </Link>
+          <NavLink key={link.href} href={link.href} label={link.label} />
         ))}
-        <div style={{ marginTop: 24 }}>
+        <div className="nav-foot">
           {/* Signing out is a server action: the session is dropped server-side. */}
           <Link href="/login">退出登录</Link>
         </div>

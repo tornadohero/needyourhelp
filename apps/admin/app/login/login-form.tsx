@@ -21,7 +21,7 @@ export function LoginForm({ action }: { action: (formData: FormData) => Promise<
           setMessage(result.message);
         }
       }}
-      style={{ display: 'grid', gap: 12 }}
+      className="auth-form"
     >
       <input name="username" placeholder="用户名" autoComplete="username" />
       <input name="password" type="password" placeholder="密码" autoComplete="current-password" />

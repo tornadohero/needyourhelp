@@ -1,13 +1,57 @@
+/*
+ * Console styling.
+ *
+ * One palette, one sheet of rules: the console is an internal tool, and its
+ * screens are plain server-rendered markup, so the look lives entirely here.
+ * No component library and no client-side CSS-in-JS — a page stays readable
+ * even with JavaScript off (`specs/12-admin-spec.md`).
+ */
+
+:root {
+  --bg-top: #f4faf7;
+  --bg-bottom: #eef6f2;
+  --surface: #ffffff;
+  --surface-soft: #f7fbf9;
+  --surface-hover: #f9fdfb;
+  --border: #e3efe8;
+  --border-strong: #d3e7dd;
+  --text: #2f4038;
+  --text-muted: #7b8f85;
+  --primary: #4fae86;
+  --primary-strong: #3c8f6c;
+  --primary-soft: #e8f5ee;
+  --danger: #c2604f;
+  --danger-soft: #fdf1ee;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 20px rgba(60, 143, 108, 0.07);
+  --shadow-lift: 0 14px 28px rgba(60, 143, 108, 0.13);
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  background: #f5f6f8;
-  color: #1f2328;
+  min-height: 100vh;
+  background: linear-gradient(160deg, var(--bg-top) 0%, var(--bg-bottom) 55%, #f7fbf9 100%);
+  background-attachment: fixed;
+  color: var(--text);
   font-family:
     system-ui,
     -apple-system,
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
     'Segoe UI',
     sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* ------------------------------------------------------------------ layout */
 
 .shell {
   display: flex;
@@ -15,105 +59,339 @@ body {
 }
 
 .nav {
-  width: 200px;
-  padding: 24px 16px;
-  background: #ffffff;
-  border-right: 1px solid #e6e8eb;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  width: 228px;
+  height: 100vh;
+  padding: 26px 16px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid var(--border);
+}
+
+.nav .brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 6px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: var(--text);
+}
+
+.nav .brand::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--primary) 0%, #8fd9bb 100%);
+  box-shadow: 0 0 0 4px var(--primary-soft);
 }
 
 .nav a {
   display: block;
-  padding: 8px 0;
-  color: #1f2328;
-  text-decoration: none;
+  padding: 9px 12px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-sm);
+  color: #5a7268;
   font-size: 14px;
+  text-decoration: none;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
 }
 
-.nav .brand {
+.nav a:hover {
+  background: var(--surface-soft);
+  color: var(--primary-strong);
+}
+
+/* The current screen, so an operator never guesses where they are. */
+.nav a.active {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
   font-weight: 600;
-  margin-bottom: 16px;
+}
+
+.nav .nav-foot {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border-strong);
+}
+
+.nav .nav-foot a {
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .content {
   flex: 1;
-  padding: 24px 32px;
+  min-width: 0;
+  padding: 30px 34px 48px;
+}
+
+.content > section {
+  max-width: 1180px;
 }
 
 h1 {
-  font-size: 20px;
-  margin: 0 0 16px;
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
+h2 {
+  margin: 24px 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.muted {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------- cards */
+
 .cards {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(218px, 1fr));
   gap: 16px;
 }
 
 .card {
-  min-width: 200px;
-  padding: 16px;
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #e6e8eb;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
 }
 
 .card .label {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .card .value {
-  font-size: 22px;
+  margin: 4px 0 2px;
+  font-size: 26px;
   font-weight: 600;
+  color: var(--primary-strong);
+  letter-spacing: 0.3px;
 }
 
 .card .hint {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
+
+/* ------------------------------------------------------------------ tables */
 
 table {
   width: 100%;
-  border-collapse: collapse;
-  background: #ffffff;
-  border: 1px solid #e6e8eb;
-  border-radius: 12px;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
   font-size: 14px;
+  overflow: hidden;
 }
 
-th,
-td {
-  padding: 8px 12px;
+th {
+  padding: 11px 14px;
   text-align: left;
-  border-bottom: 1px solid #eef0f2;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-soft);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 
-.state {
-  padding: 16px;
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #e6e8eb;
+td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid #f0f6f2;
+  vertical-align: middle;
 }
+
+tbody tr:hover td {
+  background: var(--surface-hover);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+td:first-child {
+  color: var(--text);
+}
+
+/* -------------------------------------------------------- forms and inputs */
 
 form.inline {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
   align-items: center;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 input,
-select,
-button {
-  padding: 6px 10px;
-  font-size: 14px;
+select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  outline: none;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 174, 134, 0.15);
+}
+
+input::placeholder {
+  color: #a9bcb3;
 }
 
 button {
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, #5cba92 0%, #489f79 100%);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 500;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(72, 159, 121, 0.24);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(72, 159, 121, 0.3);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ---------------------------------------------------------------- messages */
+
+.state {
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  color: var(--text-muted);
 }
 
 .error {
-  color: #b42318;
+  display: inline-block;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
   font-size: 13px;
+}
+
+/* ------------------------------------------------------------------- login */
+
+.auth {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 32px 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 384px;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 20px 44px rgba(60, 143, 108, 0.12);
+}
+
+.auth-card h1 {
+  margin-bottom: 6px;
+  text-align: center;
+  font-size: 20px;
+}
+
+.auth-card .muted {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-form input {
+  width: 100%;
+}
+
+.auth-form button {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 16px;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    flex-direction: column;
+  }
+
+  .nav {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav a {
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  .content {
+    padding: 20px 16px 32px;
+  }
 }

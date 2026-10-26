@@ -12,12 +12,14 @@ import { LoginForm } from './login-form';
  */
 export default function LoginPage() {
   return (
-    <main style={{ maxWidth: 360, margin: '80px auto', padding: 24 }}>
-      <h1>运营后台登录</h1>
-      <p style={{ fontSize: 13, color: '#6b7280' }}>
-        使用控制台用户名与密码登录。登录不会授予角色：只有已持有 ADMIN/OPS 的账号可用。
-      </p>
-      <LoginForm action={signIn} />
+    <main className="auth">
+      <div className="auth-card">
+        <h1>运营后台登录</h1>
+        <p className="muted">
+          使用控制台用户名与密码登录。登录不会授予角色：只有已持有 ADMIN/OPS 的账号可用。
+        </p>
+        <LoginForm action={signIn} />
+      </div>
     </main>
   );
 }

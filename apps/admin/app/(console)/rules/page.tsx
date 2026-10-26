@@ -30,9 +30,7 @@ export default async function RulesPage() {
   return (
     <section>
       <h1>平台规则</h1>
-      <p style={{ fontSize: 13, color: '#6b7280' }}>
-        费率与取消政策以草稿撰写，发布后才生效；发布动作会二次确认。
-      </p>
+      <p className="muted">费率与取消政策以草稿撰写，发布后才生效；发布动作会二次确认。</p>
 
       {error.length > 0 ? (
         <p className="state">{error}</p>
