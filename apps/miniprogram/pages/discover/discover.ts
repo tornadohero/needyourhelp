@@ -152,9 +152,30 @@ const pageOptions = {
     this.setData({ draft: { ...this.data.draft, deliveryMode: next } });
   },
 
+  /**
+   * Pick a sort.
+   *
+   * These chips sit on the list, not in the filter sheet, so a tap is the whole
+   * gesture: it applies at once and the list is re-read from the server. Only
+   * the sheet's chips wait for "应用" — that is the difference between this and
+   * `onPickDelivery`.
+   *
+   * Normalised on the way out, so an unknown sort falls back to the default
+   * instead of producing a request the server would refuse.
+   */
   onPickSort(this: PageInstance, event: WechatMiniprogram.TouchEvent): void {
-    const sort = String(event.currentTarget.dataset.sort ?? 'relevance');
-    this.setData({ draft: { ...this.data.draft, sort: sort as ProviderFilter['sort'] } });
+    const requested = String(event.currentTarget.dataset.sort ?? 'relevance');
+    const sort = normalizeFilter({
+      ...this.data.filter,
+      sort: requested as ProviderFilter['sort'],
+    }).sort;
+
+    if (sort === this.data.filter.sort) {
+      return;
+    }
+
+    this.setData({ filter: { ...this.data.filter, sort }, draft: { ...this.data.draft, sort } });
+    void this.load();
   },
 
   async onApplyFilter(this: PageInstance): Promise<void> {
