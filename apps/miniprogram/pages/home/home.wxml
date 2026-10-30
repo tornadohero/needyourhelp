@@ -6,16 +6,8 @@
       <view class="sub">{{role === 'parent' ? '家长' : deskName || '导师'}}</view>
     </view>
     <view class="roles">
-      <text
-        class="chip {{role === 'parent' ? 'chip-on' : ''}}"
-        data-role="parent"
-        bindtap="onSwitchRole"
-      >家长</text>
-      <text
-        class="chip {{role === 'provider' ? 'chip-on' : ''}}"
-        data-role="provider"
-        bindtap="onSwitchRole"
-      >导师</text>
+      <text class="chip {{role === 'parent' ? 'chip-on' : ''}}" data-role="parent" bindtap="onSwitchRole">家长</text>
+      <text class="chip {{role === 'provider' ? 'chip-on' : ''}}" data-role="provider" bindtap="onSwitchRole">导师</text>
     </view>
   </view>
 
@@ -32,10 +24,10 @@
   </view>
 
   <block wx:else>
-    <!-- The mentor's own question first: what do I teach today. -->
+    <!-- P0: the mentor's own question first — what do I teach today. -->
     <view wx:if="{{role === 'provider' && today.length > 0}}" class="section">
       <view class="section-title">今天要上的课</view>
-      <view class="card today" wx:for="{{today}}" wx:key="orderId">
+      <view class="card" wx:for="{{today}}" wx:key="orderId">
         <view class="row">
           <text class="name">{{item.title}}</text>
           <text class="when">{{item.whenText}}</text>
@@ -47,6 +39,7 @@
       </view>
     </view>
 
+    <!-- P0: the to-do list. -->
     <view class="section">
       <view class="section-title">{{role === 'parent' ? '接下来' : '待处理'}}</view>
 
@@ -82,6 +75,111 @@
       </view>
     </view>
 
+    <!-- P1 · 家长：继续上次没挑完的搜索。 -->
+    <view wx:if="{{role === 'parent' && continueSearch}}" class="section">
+      <view class="section-title">继续找老师</view>
+      <view class="card">
+        <view class="row">
+          <text class="hint">
+            {{continueSearch.summary.length > 0 ? continueSearch.summaryText : '按评分推荐'}}
+          </text>
+          <text class="more" bindtap="onOpenDiscover">全部 ›</text>
+        </view>
+        <view
+          class="suggest"
+          wx:for="{{continueSearch.providers}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onOpenProvider"
+        >
+          <view class="row">
+            <text class="name">{{item.name}}</text>
+            <text class="status">{{item.ratingText}}</text>
+          </view>
+          <view class="hint">{{item.cityText}} · {{item.fromPriceText}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- P1 · 家长：上完的课，还没说两句。 -->
+    <view wx:if="{{role === 'parent' && pendingReviews.length > 0}}" class="section">
+      <view class="section-title">待评价</view>
+      <view class="card" wx:for="{{pendingReviews}}" wx:key="orderId">
+        <view class="row">
+          <text class="name">{{item.title}}</text>
+          <text class="when">{{item.whenText}}</text>
+        </view>
+        <view class="row actions">
+          <text class="hint">说两句，帮其他家长做判断。</text>
+          <button
+            class="action"
+            size="mini"
+            data-id="{{item.orderId}}"
+            catchtap="onOpenReview"
+          >去评价</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- P2 · 家长：每个孩子的进度（只有昵称与节数）。 -->
+    <view wx:if="{{role === 'parent' && children.length > 0}}" class="section">
+      <view class="section-title">孩子的学习</view>
+      <view class="card" wx:for="{{children}}" wx:key="id">
+        <view class="row">
+          <text class="name">{{item.name}}</text>
+          <text class="status">已完成 {{item.lessonsDone}} 节</text>
+        </view>
+        <view wx:if="{{item.lastTitle}}" class="hint">最近：{{item.lastTitle}}</view>
+      </view>
+    </view>
+
+    <!-- P1 · 导师：能不能被家长找到、约到。 -->
+    <view wx:if="{{role === 'provider' && deskHealth}}" class="section">
+      <view class="section-title">可被发现</view>
+      <view class="card">
+        <view class="row">
+          <text class="hint">{{deskHealth.approvalText}} · {{deskHealth.searchableText}}</text>
+          <text class="status">已发布 {{deskHealth.publishedServices}} 个服务</text>
+        </view>
+        <view class="hint">未来 7 天可约时段：{{deskHealth.slotsNext7Days}} 个</view>
+        <view wx:for="{{deskHealth.warnings}}" wx:key="*this" class="warn">{{item}}</view>
+        <view class="row actions">
+          <button class="action" size="mini" bindtap="onOpenDesk">去工作台</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- P1 · 导师：口碑。 -->
+    <view wx:if="{{role === 'provider' && reputation}}" class="section">
+      <view class="section-title">口碑</view>
+      <view class="card">
+        <view class="row">
+          <text class="name">{{reputation.ratingText}}</text>
+          <text class="status">{{reputation.reviewCount}} 条评价</text>
+        </view>
+        <view wx:for="{{reputation.latest}}" wx:key="*this" class="hint">“{{item}}”</view>
+      </view>
+    </view>
+
+    <!-- P2 · 导师：本周完成单量（金额等后端收益接口）。 -->
+    <view wx:if="{{role === 'provider'}}" class="section">
+      <view class="section-title">本周</view>
+      <view class="card">
+        <view class="row">
+          <text class="name">已完成 {{weekly.completedThisWeek}} 单</text>
+          <text class="hint">结算金额待收益接口上线</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- P2 · 导师：合规提醒。 -->
+    <view wx:if="{{role === 'provider' && compliance}}" class="section">
+      <view class="section-title">合规</view>
+      <view class="card">
+        <view wx:for="{{compliance.alerts}}" wx:key="*this" class="hint">· {{item}}</view>
+      </view>
+    </view>
+
     <view class="section">
       <view class="section-title">快捷入口</view>
       <view class="entries">
@@ -96,4 +194,32 @@
 
     <view class="safety">通过平台沟通与支付，权益才有保障。</view>
   </block>
+
+  <!-- 评价：星级 + 一句话，写完就提交。 -->
+  <view wx:if="{{reviewing}}" class="sheet-mask" bindtap="onCloseReview"></view>
+  <view wx:if="{{reviewing}}" class="sheet">
+    <view class="section-title">评价这节课</view>
+    <view class="stars">
+      <text
+        wx:for="{{stars}}"
+        wx:key="*this"
+        class="star {{item <= reviewRating ? 'star-on' : ''}}"
+        data-value="{{item}}"
+        bindtap="onPickStar"
+      >★</text>
+    </view>
+    <textarea
+      class="note"
+      value="{{reviewContent}}"
+      placeholder="说两句（可选）"
+      maxlength="200"
+      bindinput="onReviewInput"
+    />
+    <view class="row actions">
+      <button class="action" size="mini" bindtap="onCloseReview">取消</button>
+      <button class="action" size="mini" disabled="{{busy || reviewRating === 0}}" bindtap="onSubmitReview">
+        提交
+      </button>
+    </view>
+  </view>
 </view>

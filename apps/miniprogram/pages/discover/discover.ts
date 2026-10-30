@@ -8,6 +8,8 @@ import {
   normalizeFilter,
 } from '../../src/core/filters';
 import type { ProviderFilter } from '../../src/core/filters';
+import { LAST_FILTER_KEY } from '../../src/core/insights';
+import { writeStored } from '../../src/platform/wechat';
 import { canLoadMore, loadMoreProviders, loadProviders } from '../../src/services/discovery';
 import type { ListState } from '../../src/core/paging';
 import type { ProviderRowView } from '../../src/core/provider-view';
@@ -181,6 +183,8 @@ const pageOptions = {
   async onApplyFilter(this: PageInstance): Promise<void> {
     // Normalised here too: a value the server would refuse never leaves the screen.
     const filter = normalizeFilter(this.data.draft);
+    // Remembered locally, so the home can pick the search up where it was left.
+    writeStored(LAST_FILTER_KEY, filter);
     this.setData({
       filter,
       showFilter: false,

@@ -152,3 +152,61 @@
   font-size: 22rpx;
   color: var(--muted);
 }
+
+/* Review sheet: five stars and one optional line. */
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 40, 25, 0.35);
+}
+
+.sheet {
+  position: fixed;
+  left: 32rpx;
+  right: 32rpx;
+  bottom: 80rpx;
+  padding: 32rpx;
+  border-radius: 24rpx;
+  background: var(--card);
+  box-shadow: 0 20rpx 48rpx rgba(60, 143, 108, 0.18);
+}
+
+.stars {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.star {
+  font-size: 52rpx;
+  color: var(--border);
+}
+
+.star-on {
+  color: var(--brand);
+}
+
+.note {
+  width: 100%;
+  min-height: 140rpx;
+}
+
+.more {
+  font-size: 24rpx;
+  color: var(--brand-deep);
+}
+
+.suggest {
+  padding: 16rpx 0 0;
+  border-top: 1rpx solid var(--border-soft);
+  margin-top: 16rpx;
+}
+
+.warn {
+  margin-top: 10rpx;
+  padding: 10rpx 16rpx;
+  border-radius: 12rpx;
+  background: var(--brand-soft);
+  color: var(--notice);
+  font-size: 24rpx;
+}

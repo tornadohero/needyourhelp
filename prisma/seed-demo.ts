@@ -604,7 +604,13 @@ async function ensureThreads(client: PrismaClient, userId: string): Promise<void
 async function ensureTodayLesson(client: PrismaClient, userId: string): Promise<void> {
   const desk = await client.providerProfile.findFirst({
     where: { userId },
-    select: { id: true, services: { where: { status: 'PUBLISHED' }, select: { id: true, priceMinor: true, title: true, durationMinutes: true } } },
+    select: {
+      id: true,
+      services: {
+        where: { status: 'PUBLISHED' },
+        select: { id: true, priceMinor: true, title: true, durationMinutes: true },
+      },
+    },
   });
   const service = desk?.services[0];
   if (desk === null || desk === undefined || service === undefined) {
@@ -630,7 +636,9 @@ async function ensureTodayLesson(client: PrismaClient, userId: string): Promise<
     data: {
       orderNo: `MP-DEMO-TODAY-${userId.slice(0, 8)}`,
       // A demo parent books it: the mentor's own account delivers it.
-      buyerUserId: (await client.user.findFirst({ where: { roles: { some: { role: 'PARENT' } } } }))?.id ?? userId,
+      buyerUserId:
+        (await client.user.findFirst({ where: { roles: { some: { role: 'PARENT' } } } }))?.id ??
+        userId,
       providerId: desk.id,
       serviceId: service.id,
       domain: 'TUTORING',

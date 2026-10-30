@@ -5,7 +5,17 @@ import type { HomeRole, NextActionView } from '../../src/core/home';
 import { confirm, navigateTo, showToast } from '../../src/platform/wechat';
 import { ensureSession } from '../../src/services/auth';
 import type { SessionState } from '../../src/services/auth';
-import { loadHome } from '../../src/services/home';
+import { loadHome, submitReview } from '../../src/services/home';
+import type {
+  ChildProgressView,
+  ComplianceView,
+  ContinueSearchView,
+  DeskHealthView,
+  PendingReviewView,
+  ReputationView,
+  WeeklyView,
+} from '../../src/core/insights';
+import type { ProviderRowView } from '../../src/core/provider-view';
 import { completeOrder, confirmOrder, startOrder } from '../../src/services/provider-desk';
 
 /**
@@ -29,6 +39,25 @@ interface HomeData {
   conversations: number;
   database: 'up' | 'down' | 'unknown';
   busy: boolean;
+
+  // P1
+  continueSearch:
+    (ContinueSearchView & { providers: ProviderRowView[]; summaryText: string }) | null;
+  pendingReviews: PendingReviewView[];
+  reputation: ReputationView | null;
+  deskHealth: DeskHealthView | null;
+
+  // P2
+  children: ChildProgressView[];
+  weekly: WeeklyView;
+  compliance: ComplianceView | null;
+
+  // Review sheet
+  reviewing: boolean;
+  reviewOrderId: string;
+  reviewRating: number;
+  reviewContent: string;
+  stars: number[];
 }
 
 type PageInstance = WechatMiniprogram.Page.Instance<HomeData, { context: MentorContext }> & {
@@ -49,6 +78,18 @@ const pageOptions = {
     conversations: 0,
     database: 'unknown',
     busy: false,
+    continueSearch: null,
+    pendingReviews: [] as PendingReviewView[],
+    reputation: null,
+    deskHealth: null,
+    children: [] as ChildProgressView[],
+    weekly: { completedThisWeek: 0 },
+    compliance: null,
+    reviewing: false,
+    reviewOrderId: '',
+    reviewRating: 0,
+    reviewContent: '',
+    stars: [1, 2, 3, 4, 5],
   },
 
   context: ensureContext(),
@@ -84,6 +125,20 @@ const pageOptions = {
         today: home.today,
         conversations: home.conversations,
         database: home.database,
+        continueSearch:
+          home.continueSearch === null
+            ? null
+            : {
+                ...home.continueSearch,
+                // A summary is a sentence, not an array, once it is rendered.
+                summaryText: home.continueSearch.summary.join(' · '),
+              },
+        pendingReviews: home.pendingReviews,
+        reputation: home.reputation,
+        deskHealth: home.deskHealth,
+        children: home.children,
+        weekly: home.weekly,
+        compliance: home.compliance,
       });
     } catch (error) {
       this.setData({ loading: false, error: errorMessageOf(error) });
@@ -122,6 +177,55 @@ const pageOptions = {
 
   onOpenDesk(): void {
     navigateTo('/pages/provider-desk/provider-desk');
+  },
+
+  onOpenProvider(this: PageInstance, event: WechatMiniprogram.TouchEvent): void {
+    const id = String(event.currentTarget.dataset.id ?? '');
+    if (id.length > 0) {
+      navigateTo(`/pages/provider/provider?id=${encodeURIComponent(id)}`);
+    }
+  },
+
+  /** Open the review sheet for one finished lesson. */
+  onOpenReview(this: PageInstance, event: WechatMiniprogram.TouchEvent): void {
+    const id = String(event.currentTarget.dataset.id ?? '');
+    if (id.length === 0) {
+      return;
+    }
+    this.setData({ reviewing: true, reviewOrderId: id, reviewRating: 0, reviewContent: '' });
+  },
+
+  onCloseReview(this: PageInstance): void {
+    this.setData({ reviewing: false, reviewOrderId: '', reviewRating: 0, reviewContent: '' });
+  },
+
+  onPickStar(this: PageInstance, event: WechatMiniprogram.TouchEvent): void {
+    this.setData({ reviewRating: Number(event.currentTarget.dataset.value ?? 0) });
+  },
+
+  onReviewInput(this: PageInstance, event: WechatMiniprogram.Input): void {
+    this.setData({ reviewContent: String(event.detail.value ?? '') });
+  },
+
+  async onSubmitReview(this: PageInstance): Promise<void> {
+    if (this.data.reviewRating === 0) {
+      return;
+    }
+
+    this.setData({ busy: true });
+    try {
+      await submitReview(
+        this.context,
+        this.data.reviewOrderId,
+        this.data.reviewRating,
+        this.data.reviewContent,
+      );
+      this.setData({ reviewing: false, reviewRating: 0, reviewContent: '', reviewOrderId: '' });
+      await this.load();
+    } catch (error) {
+      showToast(errorMessageOf(error));
+    }
+    this.setData({ busy: false });
   },
 
   onOpenOrder(this: PageInstance, event: WechatMiniprogram.TouchEvent): void {
