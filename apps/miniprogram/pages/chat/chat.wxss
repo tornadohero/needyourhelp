@@ -1,0 +1,76 @@
+/* 聊天页：气泡靠边站，输入框钉在底部（小清新 · 青芒果绿）。 */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+}
+
+.state {
+  margin: 32rpx 24rpx;
+  font-size: 28rpx;
+  color: var(--muted);
+}
+
+.button {
+  margin-top: 24rpx;
+}
+
+.thread {
+  flex: 1;
+  min-height: 0;
+  padding: 24rpx;
+}
+
+.thread-pad {
+  height: 24rpx;
+}
+
+/* One bubble per row; "mine" hugs the right in the brand green. */
+.bubble-row {
+  display: flex;
+  margin-bottom: 20rpx;
+}
+
+.bubble-row.mine {
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: 70%;
+  padding: 18rpx 24rpx;
+  border-radius: 20rpx;
+  background: var(--card);
+  border: 1rpx solid var(--border);
+  font-size: 28rpx;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.bubble-row.mine .bubble {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+}
+
+/* The composer never scrolls away: a chat answers where it was asked. */
+.composer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 24rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: 1rpx solid var(--border);
+}
+
+.composer-input {
+  flex: 1;
+}
+
+.composer-send {
+  flex-shrink: 0;
+  margin: 0;
+}

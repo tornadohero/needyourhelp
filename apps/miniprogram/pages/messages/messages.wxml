@@ -1,6 +1,38 @@
 <view class="page">
-  <view class="title">消息</view>
+  <view class="head">
+    <view class="title">消息</view>
+  </view>
+
   <view wx:if="{{loading}}" class="state">正在加载…</view>
-  <view wx:elif="{{sessionState === 'needs-login'}}" class="state">登录后查看会话。</view>
-  <view wx:else class="state">暂无会话。</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:elif="{{empty}}" class="state">暂无会话。预约后可以在这里和老师沟通。</view>
+
+  <block wx:else>
+    <view
+      class="thread"
+      wx:for="{{rows}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onOpenChat"
+      hover-class="thread-hover"
+    >
+      <view class="avatar">{{item.title[0]}}</view>
+      <view class="body">
+        <view class="line-top">
+          <text class="name">{{item.title}}</text>
+          <text wx:if="{{item.timeText}}" class="time">{{item.timeText}}</text>
+        </view>
+        <view class="line-bottom">
+          <text class="preview">{{item.preview || '开始聊天吧'}}</text>
+          <text wx:if="{{item.orderLinked}}" class="tag">订单</text>
+        </view>
+      </view>
+    </view>
+    <view class="foot">只显示与你有会话的人</view>
+  </block>
 </view>

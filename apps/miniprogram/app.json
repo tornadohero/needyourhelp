@@ -3,6 +3,7 @@
     "pages/home/home",
     "pages/discover/discover",
     "pages/messages/messages",
+    "pages/chat/chat",
     "pages/orders/orders",
     "pages/me/me",
     "pages/provider/provider",

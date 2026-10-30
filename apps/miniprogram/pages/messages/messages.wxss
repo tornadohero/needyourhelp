@@ -1,30 +1,112 @@
+/* 消息 tab：一眼能扫完的会话列表（小清新 · 青芒果绿）。 */
+
 .page {
-  padding: 32rpx;
+  padding: 24rpx 24rpx 48rpx;
 }
 
 .title {
   font-size: 36rpx;
   font-weight: 600;
-  margin-bottom: 16rpx;
+  margin-bottom: 20rpx;
 }
 
-.hint {
+.state {
+  margin-top: 32rpx;
   font-size: 28rpx;
   color: var(--muted);
 }
 
-.state {
-  margin-top: 24rpx;
-  font-size: 28rpx;
-}
-
-.card {
-  padding: 24rpx;
-  margin-bottom: 16rpx;
-  border-radius: 16rpx;
-  background: var(--card);
-}
-
 .button {
   margin-top: 24rpx;
+}
+
+/* One thread, one row: avatar, name + last words, time. */
+.thread {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 20rpx;
+  margin-bottom: 14rpx;
+  border-radius: 20rpx;
+  background: var(--card);
+  border: 1rpx solid var(--border);
+  box-shadow: 0 6rpx 20rpx rgba(95, 147, 39, 0.05);
+}
+
+.thread-hover {
+  background: var(--brand-soft);
+}
+
+/* The avatar is a soft mint circle with the counterpart's first character —
+   no photo, because the platform does not hand out avatars to strangers. */
+.avatar {
+  flex-shrink: 0;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  font-size: 36rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 22rpx;
+  overflow: hidden;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.line-top,
+.line-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.time {
+  font-size: 22rpx;
+  color: var(--muted);
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}
+
+.line-bottom {
+  margin-top: 8rpx;
+}
+
+/* One line, however long the message was. */
+.preview {
+  flex: 1;
+  min-width: 0;
+  font-size: 26rpx;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  padding: 2rpx 14rpx;
+  border-radius: 999rpx;
+  background: var(--brand-tint);
+  color: var(--brand-deep);
+  font-size: 20rpx;
+}
+
+.foot {
+  margin-top: 24rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--muted);
 }

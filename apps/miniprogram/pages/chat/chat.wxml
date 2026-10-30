@@ -1,0 +1,52 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onPullDownRefresh">重试</button>
+  </view>
+
+  <block wx:else>
+    <scroll-view
+      class="thread"
+      scroll-y
+      scroll-into-view="{{intoView}}"
+      scroll-with-animation
+    >
+      <view wx:if="{{messages.length === 0}}" class="state">
+        还没有消息，打个招呼吧。
+      </view>
+
+      <view
+        wx:for="{{messages}}"
+        wx:key="id"
+        id="{{item.id}}"
+        class="bubble-row {{item.mine ? 'mine' : ''}}"
+      >
+        <view class="bubble">
+          <text>{{item.body}}</text>
+        </view>
+      </view>
+      <view class="thread-pad"></view>
+    </scroll-view>
+
+    <view class="composer">
+      <input
+        class="composer-input"
+        value="{{draft}}"
+        placeholder="输入消息…"
+        confirm-type="send"
+        bindinput="onDraftInput"
+        bindconfirm="onSend"
+      />
+      <button
+        class="composer-send"
+        size="mini"
+        disabled="{{sending || !draft}}"
+        bindtap="onSend"
+      >
+        发送
+      </button>
+    </view>
+  </block>
+</view>
