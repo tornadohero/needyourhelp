@@ -273,6 +273,7 @@ async function main(): Promise<void> {
       // Threads first: they are idempotent, so every account gets them whether
       // its personal side was filled long ago or is being filled right now.
       await ensureThreads(client, account.id);
+      await ensureTodayLesson(client, account.id);
 
       const existing = await client.order.count({ where: { buyerUserId: account.id } });
       if (existing > 0) {
@@ -592,6 +593,68 @@ async function ensureThreads(client: PrismaClient, userId: string): Promise<void
   }
 
   flushMailboxStore();
+}
+
+/**
+ * One lesson today, so the mentor's home is not empty.
+ *
+ * The provider's first question when they open the app is "what do I teach
+ * today"; a demo that answers "nothing" hides the screen that matters most.
+ */
+async function ensureTodayLesson(client: PrismaClient, userId: string): Promise<void> {
+  const desk = await client.providerProfile.findFirst({
+    where: { userId },
+    select: { id: true, services: { where: { status: 'PUBLISHED' }, select: { id: true, priceMinor: true, title: true, durationMinutes: true } } },
+  });
+  const service = desk?.services[0];
+  if (desk === null || desk === undefined || service === undefined) {
+    return;
+  }
+
+  // Today at 19:00 local: an evening lesson, which is when tutoring happens.
+  const start = new Date();
+  start.setHours(19, 0, 0, 0);
+  const end = new Date(start.getTime() + service.durationMinutes * 60_000);
+  const startOfDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+
+  const exists = await client.order.findFirst({
+    where: { providerId: desk.id, scheduledStart: { gte: startOfDay } },
+  });
+  if (exists !== null) {
+    return;
+  }
+
+  await createSlot(client, desk.id, start, service.durationMinutes, 'BOOKED');
+
+  const order = await client.order.create({
+    data: {
+      orderNo: `MP-DEMO-TODAY-${userId.slice(0, 8)}`,
+      // A demo parent books it: the mentor's own account delivers it.
+      buyerUserId: (await client.user.findFirst({ where: { roles: { some: { role: 'PARENT' } } } }))?.id ?? userId,
+      providerId: desk.id,
+      serviceId: service.id,
+      domain: 'TUTORING',
+      status: 'CONFIRMED',
+      ...moneyFields(service.priceMinor),
+      currency: 'CNY',
+      scheduledStart: start,
+      scheduledEnd: end,
+      priceSnapshot: snapshot(service),
+      policySnapshot: {},
+      createdAt: hoursFromNow(-6),
+    },
+  });
+
+  await client.payment.create({
+    data: {
+      orderId: order.id,
+      provider: 'MOCK',
+      providerTransactionId: `demo-pay-today-${order.id}`,
+      status: 'SUCCEEDED',
+      amountMinor: service.priceMinor,
+      paidAt: hoursFromNow(-5),
+    },
+  });
 }
 
 async function fillPersonalSide(
