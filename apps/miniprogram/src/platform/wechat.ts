@@ -182,6 +182,38 @@ export function requestPayment(params: {
 }
 
 /**
+ * Local storage, for the one thing a screen may remember: what the user was
+ * last looking for.
+ *
+ * It lives here for the same reason the transport does — `wx.*` stays in the
+ * adapter — and it carries no personal data, only a filter.
+ */
+export function readStored<T>(key: string): T | null {
+  try {
+    const raw = wx.getStorageSync(key);
+    return raw === '' || raw === null || raw === undefined ? null : (raw as T);
+  } catch {
+    return null;
+  }
+}
+
+export function writeStored(key: string, value: unknown): void {
+  try {
+    wx.setStorageSync(key, value);
+  } catch {
+    // A full or disabled storage costs a convenience, never a feature.
+  }
+}
+
+export function removeStored(key: string): void {
+  try {
+    wx.removeStorageSync(key);
+  } catch {
+    // Ignored for the same reason.
+  }
+}
+
+/**
  * Navigation and feedback.
  *
  * They live here for the same reason the transport does: a page that calls `wx`
