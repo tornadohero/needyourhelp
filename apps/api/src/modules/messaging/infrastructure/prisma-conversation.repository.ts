@@ -75,6 +75,24 @@ export class PrismaConversationRepository implements ConversationRepository {
     return { items: rows.map(mapConversation), total };
   }
 
+  /**
+   * Display names for thread headers, in one query.
+   *
+   * The conversation aggregate intentionally carries ids only; a name is
+   * presentation, so it is joined at the edge, never stored on the aggregate.
+   */
+  async memberDisplayNames(userIds: string[]): Promise<Map<string, string>> {
+    if (userIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await this.prisma.user.findMany({
+      where: { id: { in: userIds }, deletedAt: null },
+      select: { id: true, displayName: true },
+    });
+    return new Map(rows.map((row) => [row.id, row.displayName]));
+  }
+
   async addMessageReference(input: {
     conversationId: string;
     externalMessageId: string;

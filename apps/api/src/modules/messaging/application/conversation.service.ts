@@ -258,6 +258,16 @@ export class ConversationService {
    * `GET /conversations/:id/messages` (T028 gap G4): the thread as the transport
    * holds it. Members only, always bounded.
    */
+  /**
+   * Display names for thread headers, resolved in one query.
+   *
+   * A name is presentation, not part of the aggregate, so the service only
+   * forwards the question to the repository.
+   */
+  displayNames(userIds: string[]): Promise<Map<string, string>> {
+    return this.conversations.memberDisplayNames(userIds);
+  }
+
   async listMessages(
     userId: string,
     conversationId: string,

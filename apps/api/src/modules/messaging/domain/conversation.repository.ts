@@ -33,6 +33,9 @@ export interface ConversationRepository {
    *
    * No content is stored here — only what a moderation decision needs.
    */
+  /** Display names for the given member ids, for thread headers. */
+  memberDisplayNames(userIds: string[]): Promise<Map<string, string>>;
+
   addMessageReference(input: {
     conversationId: string;
     externalMessageId: string;

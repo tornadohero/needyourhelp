@@ -13,6 +13,7 @@ import type { AuthPrincipal } from '../../auth/domain/auth-session.model';
 import { ConversationService } from '../application/conversation.service';
 import {
   toConversationListResponse,
+  withMemberDisplayNames,
   toConversationReportResponse,
   toConversationResponse,
   toMessageListResponse,
@@ -71,7 +72,11 @@ export class ConversationController {
         page: query.page,
         pageSize: query.pageSize,
       });
-      return toConversationListResponse(result);
+      const response = toConversationListResponse(result);
+      const names = await this.conversations.displayNames(
+        response.items.flatMap((conversation) => conversation.members.map((m) => m.userId)),
+      );
+      return { ...response, items: response.items.map((c) => withMemberDisplayNames(c, names)) };
     });
   }
 
@@ -81,9 +86,15 @@ export class ConversationController {
     @CurrentUser() principal: AuthPrincipal,
     @Param('id') id: string,
   ): Promise<ConversationResponse> {
-    return translate(async () =>
-      toConversationResponse(await this.conversations.getForMember(principal.userId, id)),
-    );
+    return translate(async () => {
+      const response = toConversationResponse(
+        await this.conversations.getForMember(principal.userId, id),
+      );
+      const names = await this.conversations.displayNames(
+        response.members.map((member) => member.userId),
+      );
+      return withMemberDisplayNames(response, names);
+    });
   }
 
   /** `POST /conversations/:id/messages`: members only, never a blocked pair. */

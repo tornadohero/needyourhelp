@@ -40,3 +40,4 @@ pnpm-debug.log*
 
 # WeChat DevTools per-machine settings
 **/project.private.config.json
+.mock-im-mailbox.json

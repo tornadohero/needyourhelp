@@ -131,6 +131,38 @@ const PARENT_ORDER_STATUSES = [
 /** The orders the mentor side has to deliver, each with its own next command. */
 const PROVIDER_ORDER_STATUSES = ['PAID', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED'] as const;
 
+/**
+ * The mock transport's own store, shared with `MockMessagingGateway`
+ * (`apps/api/.mock-im-mailbox.json`). Writing it here is what a real IM vendor's
+ * server would have on its side; the platform database never stores bodies.
+ */
+const MAILBOX_PATH = 'apps/api/.mock-im-mailbox.json';
+
+import * as fs from 'node:fs';
+
+let mailboxCache: Record<string, unknown> | null = null;
+
+function mailboxStore(): Record<string, unknown> {
+  if (mailboxCache !== null) {
+    return mailboxCache;
+  }
+  if (fs.existsSync(MAILBOX_PATH)) {
+    try {
+      mailboxCache = JSON.parse(fs.readFileSync(MAILBOX_PATH, 'utf8')) as Record<string, unknown>;
+      return mailboxCache;
+    } catch {
+      // A broken store is an empty store.
+    }
+  }
+  mailboxCache = {};
+  return mailboxCache;
+}
+
+function flushMailboxStore(): void {
+  fs.mkdirSync('apps/api', { recursive: true });
+  fs.writeFileSync(MAILBOX_PATH, JSON.stringify(mailboxStore(), null, 2));
+}
+
 function hoursFromNow(hours: number): Date {
   return new Date(Date.now() + hours * 60 * 60_000);
 }
@@ -180,9 +212,11 @@ async function main(): Promise<void> {
     const service = firstProvider?.services[0];
 
     if (firstProvider !== null && service !== undefined) {
+      // Fixed order numbers: the marketplace demo is idempotent too, and a
+      // repeated run must not mint two more finished orders every time.
       const reviews$ = [
-        { orderNo: `MP${Date.now()}0001`, rating: 5, content: '讲得很清楚，孩子第一次说听懂了。' },
-        { orderNo: `MP${Date.now()}0002`, rating: 5, content: '会留作业并逐题批改，很负责。' },
+        { orderNo: 'MP-DEMO-REVIEW-1', rating: 5, content: '讲得很清楚，孩子第一次说听懂了。' },
+        { orderNo: 'MP-DEMO-REVIEW-2', rating: 5, content: '会留作业并逐题批改，很负责。' },
       ];
 
       for (const [index, review] of reviews$.entries()) {
@@ -236,6 +270,10 @@ async function main(): Promise<void> {
     const counterpart = firstProvider ?? (await client.providerProfile.findFirst());
 
     for (const account of accounts) {
+      // Threads first: they are idempotent, so every account gets them whether
+      // its personal side was filled long ago or is being filled right now.
+      await ensureThreads(client, account.id);
+
       const existing = await client.order.count({ where: { buyerUserId: account.id } });
       if (existing > 0) {
         continue;
@@ -449,6 +487,113 @@ type DemoServiceRow = {
 };
 
 /** Everything one account needs on the buyer side, and on the mentor side. */
+/**
+ * Two demo threads with real bodies, for every account that logs in.
+ *
+ * Idempotent by `providerConversationId`, so it runs for accounts that were
+ * filled long ago as well as for fresh ones.
+ */
+async function ensureThreads(client: PrismaClient, userId: string): Promise<void> {
+  // Two threads with real bodies, so the messages tab shows what a parent
+  // actually sees. The platform stores references only; the **transport** owns
+  // the bytes, so the bodies go into the mock gateway's own store
+  // (`apps/api/.mock-im-mailbox.json`) — exactly where a real IM vendor would
+  // keep them, and where `GET /conversations/:id/messages` reads them back.
+  const mentors = await client.providerProfile.findMany({
+    where: { publicName: { in: ['李老师', '王老师'] }, searchable: true },
+    select: { id: true, userId: true, publicName: true },
+  });
+
+  const threads: {
+    mentor: { id: string; userId: string; publicName: string };
+    slug: string;
+    lines: { from: 'mentor' | 'parent'; body: string; hoursAgo: number }[];
+  }[] = [
+    {
+      mentor: { id: '', userId: '', publicName: '李老师' },
+      slug: 'li',
+      lines: [
+        { from: 'mentor', body: '家长您好，看到您预约了初中数学一对一。', hoursAgo: 52 },
+        { from: 'parent', body: '老师好，孩子初二，数学基础有点薄弱。', hoursAgo: 50 },
+        { from: 'mentor', body: '没问题，我先做一次摸底，从函数部分入手。', hoursAgo: 49 },
+        { from: 'parent', body: '好的，那这周六上午可以吗？', hoursAgo: 30 },
+        { from: 'mentor', body: '可以，我把周六上午的时段给您留出来了。', hoursAgo: 29 },
+        { from: 'mentor', body: '课件和练习我会提前发您，孩子先做前两页。', hoursAgo: 2 },
+      ],
+    },
+    {
+      mentor: { id: '', userId: '', publicName: '王老师' },
+      slug: 'wang',
+      lines: [
+        { from: 'parent', body: '王老师，写作精批是一周几次？', hoursAgo: 26 },
+        { from: 'mentor', body: '每周一次，一次 60 分钟，含课后逐句批改。', hoursAgo: 25 },
+        { from: 'parent', body: '高二下学期开始还来得及吗？', hoursAgo: 24 },
+        { from: 'mentor', body: '来得及，前两周先抓结构，再练限时写作。', hoursAgo: 23 },
+      ],
+    },
+  ];
+
+  for (const thread of threads) {
+    const found = mentors.find((mentor) => mentor.publicName === thread.mentor.publicName);
+    if (found === undefined) {
+      continue;
+    }
+    thread.mentor = found;
+
+    const providerConversationId = `mock-conv-${thread.slug}-${userId.slice(0, 8)}`;
+
+    // The bodies are deterministic, so the transport's store is rebuilt on every
+    // run — a thread that already exists only refreshes the mailbox, it never
+    // touches the platform's rows twice.
+    const messages = thread.lines.map((line, index) => ({
+      externalMessageId: `demo-msg-${providerConversationId}-${index}`,
+      senderUserId: line.from === 'mentor' ? thread.mentor.userId : userId,
+      messageType: 'TEXT' as const,
+      body: line.body,
+      createdAt: hoursFromNow(-line.hoursAgo),
+    }));
+    mailboxStore()[providerConversationId] = messages.map((message) => ({
+      ...message,
+      createdAt: message.createdAt.toISOString(),
+    }));
+
+    const exists = await client.conversation.findFirst({ where: { providerConversationId } });
+    if (exists !== null) {
+      continue;
+    }
+
+    const conversation = await client.conversation.create({
+      data: {
+        domain: 'TUTORING',
+        status: 'OPEN',
+        providerConversationId,
+        updatedAt: messages[messages.length - 1]?.createdAt ?? new Date(),
+        members: {
+          create: [
+            { userId, role: 'BUYER' },
+            { userId: thread.mentor.userId, role: 'PROVIDER' },
+          ],
+        },
+      },
+    });
+
+    for (const message of messages) {
+      await client.messageReference.create({
+        data: {
+          conversationId: conversation.id,
+          externalMessageId: message.externalMessageId,
+          senderUserId: message.senderUserId,
+          messageType: message.messageType,
+          moderationStatus: 'APPROVED',
+          createdAt: message.createdAt,
+        },
+      });
+    }
+  }
+
+  flushMailboxStore();
+}
+
 async function fillPersonalSide(
   client: PrismaClient,
   userId: string,
@@ -743,32 +888,6 @@ async function fillPersonalSide(
         });
       }
     }
-  }
-
-  // One conversation, so the message side has history when its screen lands
-  // (IM is not built yet: the messages tab is still a shell).
-  const conversation = await client.conversation.create({
-    data: { domain: 'TUTORING', status: 'OPEN' },
-  });
-  for (const [memberId, role] of [
-    [userId, 'BUYER'],
-    [counterpart.userId, 'PROVIDER'],
-  ] as const) {
-    await client.conversationMember.create({
-      data: { conversationId: conversation.id, userId: memberId, role },
-    });
-  }
-  const lines = ['老师好，这次想补一下函数。', '好的，先做一份诊断。', '那我把最近的卷子发您。'];
-  for (const [index] of lines.entries()) {
-    await client.messageReference.create({
-      data: {
-        conversationId: conversation.id,
-        externalMessageId: `demo-msg-${conversation.id}-${index}`,
-        senderUserId: (index + 1) % 2 === 0 ? userId : counterpart.userId,
-        messageType: 'TEXT',
-        moderationStatus: 'APPROVED',
-      },
-    });
   }
 
   return { orders, reviews, slots, services, providers };

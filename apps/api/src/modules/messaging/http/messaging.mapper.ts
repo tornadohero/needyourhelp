@@ -26,8 +26,33 @@ import type { Conversation, MessageReference } from '../domain/conversation.mode
 export function toConversationMemberResponse(member: {
   userId: string;
   role: ConversationMemberResponse['role'];
+  displayName?: string | null;
 }): ConversationMemberResponse {
-  return { userId: member.userId, role: member.role };
+  return {
+    userId: member.userId,
+    role: member.role,
+    // The aggregate has no name; the controller merges one in afterwards.
+    displayName: member.displayName ?? null,
+  };
+}
+
+/**
+ * Merge display names into a rendered conversation.
+ *
+ * The aggregate carries ids only; the name is joined at the edge, and a member
+ * without a name degrades to `null` — the client then shows the role, never an
+ * invented name.
+ */
+export function withMemberDisplayNames<
+  T extends { members: { userId: string; displayName: string | null }[] },
+>(conversation: T, names: Map<string, string>): T {
+  return {
+    ...conversation,
+    members: conversation.members.map((member) => ({
+      ...member,
+      displayName: names.get(member.userId) ?? null,
+    })),
+  };
 }
 
 export function toMessageReferenceResponse(reference: MessageReference): MessageReferenceResponse {

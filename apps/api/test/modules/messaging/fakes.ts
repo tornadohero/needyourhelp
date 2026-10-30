@@ -69,6 +69,11 @@ export class FakeConversationRepository implements ConversationRepository {
     };
   }
 
+  /** Names are presentation: the fake answers what a test seeded. */
+  async memberDisplayNames(userIds: string[]): Promise<Map<string, string>> {
+    return new Map(userIds.map((id) => [id, `用户${id.slice(0, 4)}`]));
+  }
+
   async addMessageReference(input: {
     conversationId: string;
     externalMessageId: string;

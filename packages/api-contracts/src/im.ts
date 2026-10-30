@@ -36,6 +36,11 @@ export type MessageTypeName = (typeof MESSAGE_TYPES)[number];
 export interface ConversationMemberResponse {
   userId: string;
   role: ConversationRoleName;
+  /**
+   * What a thread header can show. `null` for a deleted or system member — the
+   * client falls back to the role, never to an invented name.
+   */
+  displayName: string | null;
 }
 
 /**

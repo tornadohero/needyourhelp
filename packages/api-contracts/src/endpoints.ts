@@ -36,6 +36,7 @@ export const ENDPOINTS = {
   providerAvailability: '/providers/me/availability',
   providerSlot: '/providers/me/availability/:id',
   conversations: '/conversations',
+  conversationDetail: '/conversations/:id',
   orders: '/orders',
   orderDetail: '/orders/:id',
   /** Commands, never a status write (`specs/06`): cancel is the buyer's one. */
