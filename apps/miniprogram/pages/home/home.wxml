@@ -1,20 +1,99 @@
 <view class="page">
-  <view class="title">导师平台</view>
+  <!-- Identity: one account can be both a parent and a mentor. -->
+  <view class="head">
+    <view class="greeting">
+      <view class="title">{{displayName || '你好'}}</view>
+      <view class="sub">{{role === 'parent' ? '家长' : deskName || '导师'}}</view>
+    </view>
+    <view class="roles">
+      <text
+        class="chip {{role === 'parent' ? 'chip-on' : ''}}"
+        data-role="parent"
+        bindtap="onSwitchRole"
+      >家长</text>
+      <text
+        class="chip {{role === 'provider' ? 'chip-on' : ''}}"
+        data-role="provider"
+        bindtap="onSwitchRole"
+      >导师</text>
+    </view>
+  </view>
 
   <view wx:if="{{loading}}" class="state">正在加载…</view>
-
-  <view wx:elif="{{error}}" class="state">
-    <text>{{error}}</text>
-    <button class="button" size="mini" bindtap="onRetry">重试</button>
-  </view>
 
   <view wx:elif="{{sessionState === 'needs-login'}}" class="state">
     正在为你登录；若持续失败，请检查网络后重试。
     <button class="button" size="mini" bindtap="onRetry">重试</button>
   </view>
 
-  <view wx:else class="state">
-    <view wx:if="{{user}}">已登录：{{user.displayName}}</view>
-    <view>服务状态：{{database === 'up' ? '正常' : '不可用'}}</view>
+  <view wx:elif="{{error}}" class="state">
+    <text>{{error}}</text>
+    <button class="button" size="mini" bindtap="onRetry">重试</button>
   </view>
+
+  <block wx:else>
+    <!-- The mentor's own question first: what do I teach today. -->
+    <view wx:if="{{role === 'provider' && today.length > 0}}" class="section">
+      <view class="section-title">今天要上的课</view>
+      <view class="card today" wx:for="{{today}}" wx:key="orderId">
+        <view class="row">
+          <text class="name">{{item.title}}</text>
+          <text class="when">{{item.whenText}}</text>
+        </view>
+        <view class="row">
+          <text class="status">{{item.statusText}}</text>
+          <text wx:if="{{item.action !== 'view'}}" class="todo">{{item.actionText}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">{{role === 'parent' ? '接下来' : '待处理'}}</view>
+
+      <view wx:if="{{items.length === 0}}" class="card empty">
+        <view wx:if="{{role === 'parent'}}">暂无待办。去「发现」挑一位老师吧。</view>
+        <view wx:else>没有待接单的课程。可以先补充可预约时段。</view>
+      </view>
+
+      <view
+        wx:for="{{items}}"
+        wx:key="orderId"
+        class="card {{item.urgent ? 'urgent' : ''}}"
+        data-id="{{item.orderId}}"
+        bindtap="onOpenOrder"
+      >
+        <view class="row">
+          <text class="name">{{item.title}}</text>
+          <text class="status">{{item.statusText}}</text>
+        </view>
+        <view wx:if="{{item.whenText}}" class="when">{{item.whenText}}</view>
+        <view wx:if="{{item.hint}}" class="hint">{{item.hint}}</view>
+        <view class="row actions">
+          <text wx:if="{{item.urgent}}" class="tag">临近</text>
+          <button
+            class="action"
+            size="mini"
+            disabled="{{busy}}"
+            data-id="{{item.orderId}}"
+            data-action="{{item.action}}"
+            catchtap="onAction"
+          >{{item.actionText}}</button>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">快捷入口</view>
+      <view class="entries">
+        <view class="entry" bindtap="onOpenDiscover">发现导师</view>
+        <view class="entry" bindtap="onOpenOrders">我的订单</view>
+        <view class="entry" bindtap="onOpenMessages">
+          消息<text wx:if="{{conversations > 0}}" class="dot">{{conversations}}</text>
+        </view>
+        <view class="entry" bindtap="onOpenDesk">导师工作台</view>
+      </view>
+    </view>
+
+    <view class="safety">通过平台沟通与支付，权益才有保障。</view>
+  </block>
 </view>

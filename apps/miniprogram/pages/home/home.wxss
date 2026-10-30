@@ -1,30 +1,154 @@
+/* 首页：待办清单，不是导航墙（小清新 · 青芒果绿）。 */
+
 .page {
-  padding: 32rpx;
+  padding: 28rpx 24rpx 48rpx;
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 28rpx;
 }
 
 .title {
-  font-size: 36rpx;
+  font-size: 38rpx;
   font-weight: 600;
-  margin-bottom: 16rpx;
 }
 
-.hint {
+.sub {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.roles {
+  display: flex;
+  gap: 12rpx;
+}
+
+.state {
+  margin-top: 32rpx;
   font-size: 28rpx;
   color: var(--muted);
 }
 
-.state {
+.button {
   margin-top: 24rpx;
-  font-size: 28rpx;
+}
+
+.section {
+  margin-bottom: 30rpx;
+}
+
+.section-title {
+  margin: 0 4rpx 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .card {
   padding: 24rpx;
   margin-bottom: 16rpx;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   background: var(--card);
+  border: 1rpx solid var(--border);
+  box-shadow: 0 6rpx 20rpx rgba(95, 147, 39, 0.06);
 }
 
-.button {
-  margin-top: 24rpx;
+/* Urgent reads as urgent: a tint, not a siren. */
+.card.urgent {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.card.empty {
+  color: var(--muted);
+  font-size: 26rpx;
+  box-shadow: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.status {
+  font-size: 24rpx;
+  color: var(--brand-deep);
+}
+
+.when {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: var(--text);
+}
+
+.hint {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.actions {
+  margin-top: 16rpx;
+}
+
+.tag {
+  padding: 2rpx 14rpx;
+  border-radius: 999rpx;
+  background: var(--brand-tint);
+  color: var(--brand-deep);
+  font-size: 20rpx;
+}
+
+.action {
+  margin: 0;
+}
+
+.today .todo {
+  font-size: 24rpx;
+  color: var(--brand-deep);
+}
+
+/* Four entries, two by two: the rest of the app is one tap away. */
+.entries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.entry {
+  flex: 1 1 44%;
+  padding: 26rpx 20rpx;
+  border-radius: 18rpx;
+  background: var(--card);
+  border: 1rpx solid var(--border);
+  font-size: 28rpx;
+  color: var(--text);
+  text-align: center;
+}
+
+.dot {
+  margin-left: 10rpx;
+  padding: 2rpx 14rpx;
+  border-radius: 999rpx;
+  background: var(--brand-tint);
+  color: var(--brand-deep);
+  font-size: 20rpx;
+}
+
+.safety {
+  margin-top: 32rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--muted);
 }
