@@ -14,14 +14,14 @@
 
 .hint {
   font-size: 26rpx;
-  color: #8a8a8a;
+  color: var(--muted);
 }
 
 .card {
   padding: 24rpx;
   margin-top: 24rpx;
   border-radius: 16rpx;
-  background: #f6f7f9;
+  background: var(--card);
 }
 
 .section {
@@ -33,7 +33,7 @@
 .cap,
 .ver {
   padding: 12rpx 0;
-  border-bottom: 1rpx solid #eceef0;
+  border-bottom: 1rpx solid var(--border);
 }
 
 .option {
@@ -44,7 +44,7 @@
 }
 
 .option-on {
-  border: 2rpx solid #07c160;
+  border: 2rpx solid var(--brand);
 }
 
 .input,
@@ -64,7 +64,7 @@
 .notice {
   margin-top: 24rpx;
   font-size: 28rpx;
-  color: #d4380d;
+  color: var(--notice);
 }
 
 .state {

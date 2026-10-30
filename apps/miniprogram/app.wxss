@@ -1,4 +1,110 @@
+/*
+ * Global tokens and the base page (小清新 · 青芒果绿).
+ *
+ * Every colour a screen uses is declared once, here, and the pages read it as a
+ * custom property. That keeps the palette in one place: changing the mood of
+ * the app is a change to this block, not a hunt through fifteen stylesheets.
+ */
 page {
-  background-color: #f7f7f7;
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, sans-serif;
+  /* 青芒果绿: the unripe-mango green the whole app leans on. */
+  --brand: #8cc63f;
+  --brand-deep: #5f9327;
+  --brand-soft: #eff7e1;
+  --brand-tint: #dcebca;
+
+  --bg: #f4f8ec;
+  --card: #ffffff;
+  --border: #e2edd2;
+  --border-soft: #edf4e2;
+
+  --text: #33412b;
+  --muted: #8b9b7b;
+  --notice: #b0703c;
+  --success: #5f9327;
+
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', Helvetica,
+    sans-serif;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+/* The two shapes every screen shares, so a card is a card everywhere. */
+.card {
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  border-radius: 20rpx;
+  background: var(--card);
+  border: 1rpx solid var(--border);
+  box-shadow: 0 6rpx 20rpx rgba(95, 147, 39, 0.06);
+}
+
+.hint {
+  font-size: 26rpx;
+  color: var(--muted);
+}
+
+.state {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: var(--muted);
+}
+
+.notice {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: var(--notice);
+}
+
+/* Buttons and inputs, so a control looks the same on every screen. */
+.button {
+  margin-top: 24rpx;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 16rpx 20rpx;
+  border: 1rpx solid var(--border);
+  border-radius: 16rpx;
+  background: var(--card);
+  color: var(--text);
+  font-size: 28rpx;
+}
+
+/* Buttons: WeChat paints them in its own green, which is not ours. */
+button {
+  background: var(--brand);
+  color: #ffffff;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+button::after {
+  border: none;
+}
+
+/* A secondary action stays quiet: the primary one is the call to act. */
+button[type='default'] {
+  background: var(--card);
+  color: var(--text);
+  border: 1rpx solid var(--border);
+}
+
+/* A selected chip: filter, sort, anything a tap can turn on. */
+.chip {
+  display: inline-block;
+  padding: 10rpx 22rpx;
+  margin: 0 12rpx 12rpx 0;
+  border-radius: 999rpx;
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  font-size: 26rpx;
+}
+
+.chip-on {
+  background: var(--brand);
+  color: #ffffff;
 }

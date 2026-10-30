@@ -9,14 +9,14 @@
 
 .hint {
   font-size: 26rpx;
-  color: #8a8a8a;
+  color: var(--muted);
 }
 
 .card {
   padding: 24rpx;
   margin-top: 24rpx;
   border-radius: 16rpx;
-  background: #f6f7f9;
+  background: var(--card);
 }
 
 .row {
@@ -27,7 +27,7 @@
 }
 
 .label {
-  color: #8a8a8a;
+  color: var(--muted);
 }
 
 .total {
@@ -37,7 +37,7 @@
 .notice {
   margin-top: 24rpx;
   font-size: 28rpx;
-  color: #d4380d;
+  color: var(--notice);
 }
 
 .state {

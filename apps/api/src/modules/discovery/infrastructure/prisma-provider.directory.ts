@@ -219,8 +219,11 @@ function buildWhere(query: ProviderSearchQuery): Prisma.ProviderProfileWhereInpu
  */
 function orderFor(sort: ProviderSort): Prisma.ProviderProfileOrderByWithRelationInput[] {
   switch (sort) {
+    // "评分" means the score: a 4.9 must come before a 4.6 even when the 4.6 has
+    // more reviews. The review count only breaks a tie, so two 5.0 mentors are
+    // ordered by how much evidence stands behind the score.
     case 'rating':
-      return [{ ratingCount: 'desc' }, { ratingAvg: 'desc' }, { id: 'asc' }];
+      return [{ ratingAvg: 'desc' }, { ratingCount: 'desc' }, { id: 'asc' }];
     case 'newest':
       return [{ createdAt: 'desc' }, { id: 'asc' }];
     default:

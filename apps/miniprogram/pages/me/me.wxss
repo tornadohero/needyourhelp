@@ -10,7 +10,7 @@
 
 .hint {
   font-size: 28rpx;
-  color: #8a8a8a;
+  color: var(--muted);
 }
 
 .state {
@@ -22,7 +22,7 @@
   padding: 24rpx;
   margin-bottom: 16rpx;
   border-radius: 16rpx;
-  background: #f6f7f9;
+  background: var(--card);
 }
 
 .button {
@@ -39,7 +39,7 @@
   width: 96rpx;
   height: 96rpx;
   border-radius: 48rpx;
-  background: #e6e8eb;
+  background: var(--border);
 }
 
 .section {
@@ -49,7 +49,7 @@
 }
 
 .input {
-  border: 1rpx solid #d8dade;
+  border: 1rpx solid var(--brand-tint);
   border-radius: 8rpx;
   padding: 16rpx;
   margin-bottom: 16rpx;
@@ -57,13 +57,13 @@
 
 .consent {
   padding: 12rpx 0;
-  border-bottom: 1rpx solid #eceef0;
+  border-bottom: 1rpx solid var(--border);
 }
 
 .notice {
   padding: 16rpx;
   margin-bottom: 16rpx;
   border-radius: 8rpx;
-  background: #eaf3ff;
+  background: var(--brand-soft);
   font-size: 26rpx;
 }

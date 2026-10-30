@@ -10,7 +10,7 @@
 
 .hint {
   font-size: 28rpx;
-  color: #8a8a8a;
+  color: var(--muted);
 }
 
 .state {
@@ -22,7 +22,7 @@
   padding: 24rpx;
   margin-bottom: 16rpx;
   border-radius: 16rpx;
-  background: #f6f7f9;
+  background: var(--card);
 }
 
 .button {
@@ -47,13 +47,13 @@
 .chip {
   padding: 8rpx 16rpx;
   border-radius: 20rpx;
-  background: #eef0f2;
+  background: var(--border-soft);
   font-size: 24rpx;
 }
 
 .chip-on {
-  background: #d7e6ff;
-  color: #1a73e8;
+  background: var(--brand);
+  color: #ffffff;
 }
 
 .sheet {
@@ -63,7 +63,7 @@
   bottom: 0;
   padding: 32rpx;
   background: #ffffff;
-  border-top: 1rpx solid #e6e8eb;
+  border-top: 1rpx solid var(--border);
 }
 
 .row {
@@ -74,7 +74,7 @@
 }
 
 .input {
-  border: 1rpx solid #d8dade;
+  border: 1rpx solid var(--brand-tint);
   border-radius: 8rpx;
   padding: 16rpx;
   margin-bottom: 16rpx;

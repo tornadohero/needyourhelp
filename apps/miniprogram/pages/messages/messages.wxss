@@ -10,7 +10,7 @@
 
 .hint {
   font-size: 28rpx;
-  color: #8a8a8a;
+  color: var(--muted);
 }
 
 .state {
@@ -22,7 +22,7 @@
   padding: 24rpx;
   margin-bottom: 16rpx;
   border-radius: 16rpx;
-  background: #f6f7f9;
+  background: var(--card);
 }
 
 .button {

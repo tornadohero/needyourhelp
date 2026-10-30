@@ -9,7 +9,7 @@
 
 .hint {
   font-size: 26rpx;
-  color: #8a8a8a;
+  color: var(--muted);
 }
 
 .bio {
@@ -21,7 +21,7 @@
   padding: 24rpx;
   margin-top: 24rpx;
   border-radius: 16rpx;
-  background: #f6f7f9;
+  background: var(--card);
 }
 
 .section {
@@ -34,7 +34,7 @@
 .slot,
 .review {
   padding: 12rpx 0;
-  border-bottom: 1rpx solid #eceef0;
+  border-bottom: 1rpx solid var(--border);
 }
 
 .state {
