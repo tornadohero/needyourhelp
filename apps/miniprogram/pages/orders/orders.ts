@@ -44,12 +44,11 @@ const pageOptions = {
     empty: false,
   },
 
-  context: ensureContext(),
   state: null as ListState<OrderRowView> | null,
 
   async onShow(this: PageInstance): Promise<void> {
     this.setData({ loading: true, error: '' });
-    const sessionState = await ensureSession(this.context);
+    const sessionState = await ensureSession(ensureContext());
     this.setData({ sessionState });
     if (sessionState !== 'signed-in') {
       this.setData({ loading: false });
@@ -60,7 +59,7 @@ const pageOptions = {
 
   async load(this: PageInstance): Promise<void> {
     try {
-      const state = await loadOrders(this.context);
+      const state = await loadOrders(ensureContext());
       this.state = state;
       this.setData({
         loading: false,
@@ -80,7 +79,7 @@ const pageOptions = {
 
     this.setData({ loadingMore: true });
     try {
-      const { state } = await loadMoreOrders(this.context, this.state);
+      const { state } = await loadMoreOrders(ensureContext(), this.state);
       this.state = state;
       this.setData({
         loadingMore: false,

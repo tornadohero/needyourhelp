@@ -104,7 +104,6 @@ const pageOptions = {
     lessonsIndex: 0,
   },
 
-  context: ensureContext(),
   state: { items: [], total: 0, page: 0, pageSize: 20 } as ListState<ProviderRowView>,
 
   async onShow(this: PageInstance): Promise<void> {
@@ -116,7 +115,7 @@ const pageOptions = {
   async load(this: PageInstance): Promise<void> {
     this.setData({ loading: true, error: '' });
     try {
-      this.state = await loadProviders(this.context, { filter: this.data.filter });
+      this.state = await loadProviders(ensureContext(), { filter: this.data.filter });
       this.applyState();
     } catch (error) {
       this.setData({ loading: false, error: errorMessageOf(error) });
@@ -135,7 +134,7 @@ const pageOptions = {
 
     this.setData({ loadingMore: true });
     try {
-      const { state } = await loadMoreProviders(this.context, this.state, {
+      const { state } = await loadMoreProviders(ensureContext(), this.state, {
         filter: this.data.filter,
       });
       this.state = state;
@@ -308,7 +307,7 @@ const pageOptions = {
     this.setData({ contacting: true });
     showLoading('正在打开会话…');
     try {
-      const conversationId = await openConversationWithProvider(this.context, id);
+      const conversationId = await openConversationWithProvider(ensureContext(), id);
       hideLoading();
       this.setData({ contacting: false });
       navigateTo(`/pages/chat/chat?id=${encodeURIComponent(conversationId)}`);

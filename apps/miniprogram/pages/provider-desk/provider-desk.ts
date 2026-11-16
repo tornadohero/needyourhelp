@@ -11,6 +11,7 @@ import { errorMessageOf } from '../../src/core/errors';
 import { confirm, navigateTo, showToast } from '../../src/platform/wechat';
 import {
   applyAsProvider,
+  myProviderStatus,
   myProviderProfile,
   myVerification,
   replaceProfile,
@@ -91,18 +92,29 @@ const pageOptions = {
     })),
   },
 
-  context: ensureContext(),
-
   onLoad(this: PageInstance): void {
     void this.load();
   },
 
   async load(this: PageInstance): Promise<void> {
     this.setData({ loading: true, error: '' });
+    // Not having an application is a normal empty state; ask first so the
+    // console does not fill with 404s on every visit.
+    const hasProvider = await myProviderStatus(ensureContext()).catch(() => false);
+    if (!hasProvider) {
+      this.setData({
+        loading: false,
+        hasProvider: false,
+        desk: null,
+        verifications: [],
+        error: '',
+      });
+      return;
+    }
     try {
-      const desk = await myProviderProfile(this.context);
+      const desk = await myProviderProfile(ensureContext());
       // Verification only exists once there is a provider record.
-      const verifications = await myVerification(this.context).catch(() => []);
+      const verifications = await myVerification(ensureContext()).catch(() => []);
       this.setData({ loading: false, desk, verifications, hasProvider: true });
     } catch (error) {
       // No application yet is the normal empty state, not a failure.
@@ -174,7 +186,7 @@ const pageOptions = {
     this.setData({ acting: true, notice: '' });
     try {
       // A replacement: what the form leaves empty is cleared server-side.
-      const desk = await replaceProfile(this.context, {
+      const desk = await replaceProfile(ensureContext(), {
         publicName: this.data.editName,
         headline: this.data.editHeadline,
         bio: this.data.editBio,
@@ -208,7 +220,7 @@ const pageOptions = {
   async onApply(this: PageInstance): Promise<void> {
     this.setData({ acting: true, notice: '' });
     try {
-      const desk = await applyAsProvider(this.context, {
+      const desk = await applyAsProvider(ensureContext(), {
         publicName: this.data.publicName,
         headline: this.data.headline,
         bio: this.data.bio,
@@ -240,7 +252,7 @@ const pageOptions = {
 
     this.setData({ acting: true, notice: '' });
     try {
-      const desk = await submitApplication(this.context);
+      const desk = await submitApplication(ensureContext());
       this.setData({ acting: false, desk });
       showToast('已提交审核。');
     } catch (error) {

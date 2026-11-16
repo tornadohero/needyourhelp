@@ -44,7 +44,6 @@ const pageOptions = {
     empty: false,
   },
 
-  context: ensureContext(),
   providerId: '',
   page: 1,
 
@@ -62,7 +61,7 @@ const pageOptions = {
     this.setData({ loading: true, error: '' });
     this.page = 1;
     try {
-      const page = await providerReviews(this.context, this.providerId, {
+      const page = await providerReviews(ensureContext(), this.providerId, {
         page: 1,
         pageSize: PAGE_SIZE,
       });
@@ -85,7 +84,7 @@ const pageOptions = {
 
     this.setData({ loadingMore: true });
     try {
-      const page = await providerReviews(this.context, this.providerId, {
+      const page = await providerReviews(ensureContext(), this.providerId, {
         page: this.page + 1,
         pageSize: PAGE_SIZE,
       });

@@ -57,7 +57,6 @@ const pageOptions = {
     empty: false,
   },
 
-  context: ensureContext(),
   state: null as ListState<OrderResponse> | null,
   deskId: '',
 
@@ -71,8 +70,8 @@ const pageOptions = {
       // `GET /orders` answers every order this account participates in, both as
       // a customer and as a provider, so the desk separates them before showing.
       const [desk, page] = await Promise.all([
-        myProviderProfile(this.context),
-        listOrders(this.context, { page: 1, pageSize: 20 }),
+        myProviderProfile(ensureContext()),
+        listOrders(ensureContext(), { page: 1, pageSize: 20 }),
       ]);
 
       const state = appendPage(initialList<OrderResponse>(page.pageSize), page);
@@ -111,7 +110,7 @@ const pageOptions = {
     }
 
     try {
-      const result = await listOrders(this.context, { page, pageSize: this.state.pageSize });
+      const result = await listOrders(ensureContext(), { page, pageSize: this.state.pageSize });
       this.state = appendPage(this.state, result);
       this.render(this.deskId);
     } catch (error) {
@@ -131,7 +130,7 @@ const pageOptions = {
 
     this.setData({ acting: true, notice: '' });
     try {
-      await run(this.context, orderId);
+      await run(ensureContext(), orderId);
       this.setData({ acting: false });
       await this.load();
     } catch (error) {

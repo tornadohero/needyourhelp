@@ -77,7 +77,6 @@ const pageOptions = {
     editingId: '',
   },
 
-  context: ensureContext(),
   draft: newServiceDraft(),
 
   onLoad(this: PageInstance): void {
@@ -88,7 +87,7 @@ const pageOptions = {
   async load(this: PageInstance): Promise<void> {
     this.setData({ loading: true, error: '' });
     try {
-      const services = await listMyServices(this.context);
+      const services = await listMyServices(ensureContext());
       this.setData({ loading: false, services });
     } catch (error) {
       this.setData({ loading: false, error: errorMessageOf(error) });
@@ -165,7 +164,7 @@ const pageOptions = {
   async onSaveEdit(this: PageInstance): Promise<void> {
     this.setData({ creating: true, problem: '' });
     try {
-      await replaceService(this.context, this.data.editingId, this.draft);
+      await replaceService(ensureContext(), this.data.editingId, this.draft);
       this.setData({ creating: false, notice: '服务已更新。' });
       this.onCancelEdit();
       await this.load();
@@ -185,7 +184,7 @@ const pageOptions = {
   async onCreate(this: PageInstance): Promise<void> {
     this.setData({ creating: true, problem: '' });
     try {
-      const service = await createService(this.context, this.draft);
+      const service = await createService(ensureContext(), this.draft);
       this.draft = withDuration(newServiceDraft(), this.data.durationMinutes);
       this.setData({
         creating: false,
@@ -230,7 +229,7 @@ const pageOptions = {
 
     this.setData({ notice: '' });
     try {
-      await run(this.context, serviceId);
+      await run(ensureContext(), serviceId);
       await this.load();
     } catch (error) {
       // A refused publish is information, not a crash: show the server's reason.

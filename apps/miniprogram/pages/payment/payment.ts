@@ -56,7 +56,6 @@ const pageOptions = {
     status: null as PaymentStatusView | null,
   },
 
-  context: ensureContext(),
   orderId: '',
 
   onLoad(this: PageInstance, options: Record<string, string | undefined>): void {
@@ -72,8 +71,8 @@ const pageOptions = {
   async load(this: PageInstance, id: string): Promise<void> {
     this.setData({ loading: true, error: '' });
     try {
-      const { order } = await orderDetail(this.context, id);
-      const { view } = await readPaymentStatus(this.context, id).catch(() => ({ view: null }));
+      const { order } = await orderDetail(ensureContext(), id);
+      const { view } = await readPaymentStatus(ensureContext(), id).catch(() => ({ view: null }));
       this.setData({ loading: false, order, status: view });
     } catch (error) {
       this.setData({ loading: false, error: errorMessageOf(error), order: null });
@@ -87,7 +86,7 @@ const pageOptions = {
   async onPay(this: PageInstance): Promise<void> {
     this.setData({ paying: true, notice: '' });
     try {
-      const { view, payParams } = await createPaymentSession(this.context, this.orderId);
+      const { view, payParams } = await createPaymentSession(ensureContext(), this.orderId);
       this.setData({ session: view });
 
       if (payParams !== null) {
@@ -101,7 +100,7 @@ const pageOptions = {
         }
       }
 
-      const outcome = await waitForPayment(this.context, this.orderId, {
+      const outcome = await waitForPayment(ensureContext(), this.orderId, {
         attempts: 10,
         intervalMs: 1_000,
         onPoll: (_, view) => this.setData({ status: view }),
@@ -128,9 +127,9 @@ const pageOptions = {
   async onSimulate(this: PageInstance): Promise<void> {
     this.setData({ paying: true, notice: '' });
     try {
-      const { session } = await createPaymentSession(this.context, this.orderId);
-      await simulateGatewayCallback(this.context, session);
-      const { view } = await readPaymentStatus(this.context, this.orderId);
+      const { session } = await createPaymentSession(ensureContext(), this.orderId);
+      await simulateGatewayCallback(ensureContext(), session);
+      const { view } = await readPaymentStatus(ensureContext(), this.orderId);
       this.setData({ paying: false, status: view });
 
       if (view.outcome === 'paid') {
@@ -146,7 +145,7 @@ const pageOptions = {
 
   async refresh(this: PageInstance): Promise<void> {
     try {
-      const { order } = await orderDetail(this.context, this.orderId);
+      const { order } = await orderDetail(ensureContext(), this.orderId);
       this.setData({ order });
     } catch {
       // A refresh failure keeps the last known state on screen.

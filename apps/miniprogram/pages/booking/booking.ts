@@ -66,7 +66,6 @@ const pageOptions = {
     note: '',
   },
 
-  context: ensureContext(),
   draft: newBookingDraft(''),
   providerId: '',
 
@@ -86,9 +85,9 @@ const pageOptions = {
 
     try {
       const [detail, children, slots] = await Promise.all([
-        loadProviderDetail(this.context, providerId),
-        listChildren(this.context),
-        bookableSlots(this.context, providerId),
+        loadProviderDetail(ensureContext(), providerId),
+        listChildren(ensureContext()),
+        bookableSlots(ensureContext(), providerId),
       ]);
 
       // A service passed by the detail screen wins; otherwise nothing is chosen
@@ -147,7 +146,7 @@ const pageOptions = {
 
     this.setData({ submitting: true, problem: '' });
     try {
-      const order = await createOrder(this.context, this.draft);
+      const order = await createOrder(ensureContext(), this.draft);
       // The booking screen must not stay in the back stack: the slot is taken.
       redirectTo(`/pages/order-detail/order-detail?id=${encodeURIComponent(order.id)}`);
     } catch (error) {

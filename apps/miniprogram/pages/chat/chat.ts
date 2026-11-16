@@ -38,7 +38,6 @@ const pageOptions = {
     intoView: '',
   },
 
-  context: ensureContext(),
   conversationId: '',
 
   onLoad(this: PageInstance, query: Record<string, string | undefined>): void {
@@ -58,7 +57,7 @@ const pageOptions = {
     }
 
     try {
-      const thread = await loadThread(this.context, this.conversationId);
+      const thread = await loadThread(ensureContext(), this.conversationId);
       wx.setNavigationBarTitle({ title: thread.title });
       this.setData({
         loading: false,
@@ -83,7 +82,7 @@ const pageOptions = {
 
     this.setData({ sending: true });
     try {
-      const sent = await sendMessage(this.context, this.conversationId, body);
+      const sent = await sendMessage(ensureContext(), this.conversationId, body);
       const messages = [...this.data.messages, sent];
       // The sent bubble is the truth: it shows what the transport accepted.
       this.setData({ sending: false, draft: '', messages, intoView: sent.id });

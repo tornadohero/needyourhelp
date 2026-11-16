@@ -44,7 +44,6 @@ const pageOptions = {
     refundReason: '',
   },
 
-  context: ensureContext(),
   orderId: '',
 
   onLoad(this: PageInstance, options: Record<string, string | undefined>): void {
@@ -60,7 +59,7 @@ const pageOptions = {
   async load(this: PageInstance, orderId: string): Promise<void> {
     this.setData({ loading: true, error: '' });
     try {
-      const { order, refunds } = await orderDetail(this.context, orderId);
+      const { order, refunds } = await orderDetail(ensureContext(), orderId);
       this.setData({ loading: false, order, refunds });
     } catch (error) {
       // Not a participant reads as not found: an order id must not be probeable.
@@ -83,7 +82,7 @@ const pageOptions = {
 
     this.setData({ acting: true, notice: '' });
     try {
-      const order = await cancelOrder(this.context, this.orderId);
+      const order = await cancelOrder(ensureContext(), this.orderId);
       this.setData({ acting: false, order });
       showToast('订单已取消。');
     } catch (error) {
@@ -105,7 +104,7 @@ const pageOptions = {
     this.setData({ acting: true, notice: '' });
     try {
       // No amount is sent: the server answers what it would still refund.
-      const answer = await requestRefund(this.context, this.orderId, {
+      const answer = await requestRefund(ensureContext(), this.orderId, {
         reason: this.data.refundReason.trim() || undefined,
       });
       this.setData({ acting: false, notice: `已提交退款申请，订单状态：${answer.orderStatus}` });

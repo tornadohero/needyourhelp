@@ -38,7 +38,6 @@ const pageOptions = {
     slots: [] as SlotRowView[],
   },
 
-  context: ensureContext(),
   providerId: '',
 
   onLoad(this: PageInstance, options: Record<string, string | undefined>): void {
@@ -54,7 +53,7 @@ const pageOptions = {
   async load(this: PageInstance, id: string): Promise<void> {
     this.setData({ loading: true, error: '' });
     try {
-      const { provider, reviews, slots } = await loadProviderDetail(this.context, id);
+      const { provider, reviews, slots } = await loadProviderDetail(ensureContext(), id);
       this.setData({ loading: false, provider, reviews, slots });
     } catch (error) {
       // NOT_FOUND and FORBIDDEN look the same to a client on purpose.
@@ -84,7 +83,7 @@ const pageOptions = {
     this.setData({ contacting: true });
     showLoading('正在打开会话…');
     try {
-      const conversationId = await openConversationWithProvider(this.context, id);
+      const conversationId = await openConversationWithProvider(ensureContext(), id);
       hideLoading();
       this.setData({ contacting: false });
       navigateTo(`/pages/chat/chat?id=${encodeURIComponent(conversationId)}`);

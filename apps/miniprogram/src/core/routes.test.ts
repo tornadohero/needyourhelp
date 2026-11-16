@@ -27,6 +27,7 @@ describe('ROUTES', () => {
     expect(ROUTES.providers).toBe(ENDPOINTS.providers);
     expect(ROUTES.providerApplications).toBe(ENDPOINTS.providerApplications);
     expect(ROUTES.providerMe).toBe(ENDPOINTS.providerMe);
+    expect(ROUTES.providerMeStatus).toBe(ENDPOINTS.providerMeStatus);
     expect(ROUTES.providerSubmit).toBe(ENDPOINTS.providerSubmit);
     expect(ROUTES.providerMyServices).toBe(ENDPOINTS.providerServices);
     expect(ROUTES.providerService).toBe(ENDPOINTS.providerService);

@@ -56,8 +56,6 @@ const pageOptions = {
     notice: '',
   },
 
-  context: ensureContext(),
-
   async onShow(this: PageInstance): Promise<void> {
     await this.load();
   },
@@ -65,7 +63,7 @@ const pageOptions = {
   async load(this: PageInstance): Promise<void> {
     this.setData({ loading: true, error: '', notice: '' });
 
-    const sessionState = await ensureSession(this.context);
+    const sessionState = await ensureSession(ensureContext());
     this.setData({ sessionState });
 
     if (sessionState !== 'signed-in') {
@@ -75,9 +73,9 @@ const pageOptions = {
 
     try {
       const [me, profile, consents] = await Promise.all([
-        currentUser(this.context),
-        getProfile(this.context),
-        listConsents(this.context),
+        currentUser(ensureContext()),
+        getProfile(ensureContext()),
+        listConsents(ensureContext()),
       ]);
       this.setData({
         loading: false,
@@ -137,7 +135,7 @@ const pageOptions = {
     this.setData({ busy: true, error: '', notice: '' });
     try {
       // Only display fields: the server decides everything else.
-      const profile = await updateProfile(this.context, {
+      const profile = await updateProfile(ensureContext(), {
         displayName: name,
         ...(this.data.draftCity.trim().length > 0 ? { cityCode: this.data.draftCity.trim() } : {}),
       });
@@ -166,8 +164,8 @@ const pageOptions = {
 
     this.setData({ busy: true, error: '', notice: '' });
     try {
-      await revokeConsent(this.context, type);
-      const consents = await listConsents(this.context);
+      await revokeConsent(ensureContext(), type);
+      const consents = await listConsents(ensureContext());
       this.setData({ busy: false, consents, notice: '已撤回该同意。' });
     } catch (error) {
       this.setData({ busy: false, error: errorMessageOf(error) });
@@ -176,7 +174,7 @@ const pageOptions = {
 
   async onSignOut(this: PageInstance): Promise<void> {
     this.setData({ busy: true });
-    const sessionState = await signOut(this.context);
+    const sessionState = await signOut(ensureContext());
     this.setData({
       busy: false,
       sessionState,

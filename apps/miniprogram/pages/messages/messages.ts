@@ -32,8 +32,6 @@ const pageOptions = {
     empty: false,
   },
 
-  context: ensureContext(),
-
   async onShow(this: PageInstance): Promise<void> {
     // Refresh on every visit: a thread may have new words while the user was
     // in the booking flow.
@@ -48,7 +46,7 @@ const pageOptions = {
   async load(this: PageInstance): Promise<void> {
     this.setData({ loading: true, error: '' });
     try {
-      const rows = await listConversations(this.context);
+      const rows = await listConversations(ensureContext());
       this.setData({ loading: false, rows, empty: rows.length === 0 });
     } catch (error) {
       this.setData({ loading: false, error: errorMessageOf(error) });

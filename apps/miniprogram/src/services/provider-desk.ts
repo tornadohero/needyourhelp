@@ -1,3 +1,5 @@
+import type { ProviderMeStatusResponse } from '@mentor/api-contracts';
+
 import type { MentorContext } from '../app-context';
 import { ROUTES, fillPath } from '../core/routes';
 import { describeOrder } from '../core/order-view';
@@ -84,6 +86,22 @@ export async function replaceService(
 }
 
 /** `GET /providers/me` — the provider record as the platform sees it. */
+/**
+ * `GET /providers/me/status` — is this account a mentor yet?
+ *
+ * Always 200: not having an application is a normal state, and asking first
+ * keeps a home visit from producing a 404 that the browser logs.
+ */
+export async function myProviderStatus(context: MentorContext): Promise<boolean> {
+  return context.session.withSession(async (accessToken) => {
+    const status = await context.client.get<ProviderMeStatusResponse>(ROUTES.providerMeStatus, {
+      accessToken,
+      query: { providerType: PROVIDER_TYPE },
+    });
+    return status.hasProfile === true;
+  });
+}
+
 export async function myProviderProfile(context: MentorContext): Promise<ProviderDeskView> {
   const profile = await context.session.withSession((accessToken) =>
     context.client.get<ProviderProfileResponse>(ROUTES.providerMe, {

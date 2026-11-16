@@ -31,6 +31,7 @@ export const ROUTES = {
   providerAvailability: '/providers/:id/availability',
   providerApplications: '/providers/applications',
   providerMe: '/providers/me',
+  providerMeStatus: '/providers/me/status',
   providerSubmit: '/providers/me/submit',
   providerMyServices: '/providers/me/services',
   providerService: '/providers/me/services/:id',

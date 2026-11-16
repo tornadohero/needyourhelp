@@ -46,7 +46,6 @@ const pageOptions = {
     durationMinutes: 60,
   },
 
-  context: ensureContext(),
   providerId: '',
 
   onLoad(this: PageInstance, options: Record<string, string | undefined>): void {
@@ -62,7 +61,7 @@ const pageOptions = {
   async load(this: PageInstance): Promise<void> {
     this.setData({ loading: true, error: '' });
     try {
-      const slots = await listMySlots(this.context, this.providerId);
+      const slots = await listMySlots(ensureContext(), this.providerId);
       this.setData({ loading: false, slots });
     } catch (error) {
       this.setData({ loading: false, error: errorMessageOf(error) });
@@ -86,7 +85,7 @@ const pageOptions = {
     this.setData({ acting: true, notice: '' });
     try {
       await createSlot(
-        this.context,
+        ensureContext(),
         slotWindow(this.data.day, this.data.startTime, this.data.durationMinutes),
       );
       this.setData({ acting: false });
@@ -110,7 +109,7 @@ const pageOptions = {
 
     this.setData({ acting: true, notice: '' });
     try {
-      const deleted = await deleteSlot(this.context, slotId);
+      const deleted = await deleteSlot(ensureContext(), slotId);
       this.setData({ acting: false, notice: deleted ? '时段已删除。' : '该时段无法删除。' });
       await this.load();
     } catch (error) {

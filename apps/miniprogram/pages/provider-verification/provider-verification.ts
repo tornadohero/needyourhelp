@@ -50,8 +50,6 @@ const pageOptions = {
     cases: [] as VerificationRowView[],
   },
 
-  context: ensureContext(),
-
   onLoad(this: PageInstance): void {
     void this.load();
   },
@@ -59,7 +57,7 @@ const pageOptions = {
   async load(this: PageInstance): Promise<void> {
     this.setData({ loading: true, error: '' });
     try {
-      const cases = await myVerification(this.context);
+      const cases = await myVerification(ensureContext());
       this.setData({ loading: false, cases });
     } catch (error) {
       this.setData({ loading: false, error: errorMessageOf(error) });
@@ -80,7 +78,7 @@ const pageOptions = {
 
     this.setData({ uploading: true, notice: '' });
     try {
-      await submitEvidence(this.context, {
+      await submitEvidence(ensureContext(), {
         verificationType,
         documentType,
         contentType: file.mimeType,

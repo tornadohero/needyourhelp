@@ -92,8 +92,6 @@ const pageOptions = {
     stars: [1, 2, 3, 4, 5],
   },
 
-  context: ensureContext(),
-
   async onShow(this: PageInstance): Promise<void> {
     await this.load();
   },
@@ -106,7 +104,7 @@ const pageOptions = {
   async load(this: PageInstance): Promise<void> {
     this.setData({ loading: true, error: '' });
 
-    const sessionState = await ensureSession(this.context);
+    const sessionState = await ensureSession(ensureContext());
     this.setData({ sessionState });
     if (sessionState !== 'signed-in') {
       this.setData({ loading: false });
@@ -114,7 +112,7 @@ const pageOptions = {
     }
 
     try {
-      const home = await loadHome(this.context);
+      const home = await loadHome(ensureContext());
       this.setData({
         loading: false,
         displayName: home.displayName,
@@ -215,7 +213,7 @@ const pageOptions = {
     this.setData({ busy: true });
     try {
       await submitReview(
-        this.context,
+        ensureContext(),
         this.data.reviewOrderId,
         this.data.reviewRating,
         this.data.reviewContent,
@@ -273,11 +271,11 @@ const pageOptions = {
     this.setData({ busy: true });
     try {
       if (action === 'confirm') {
-        await confirmOrder(this.context, id);
+        await confirmOrder(ensureContext(), id);
       } else if (action === 'start') {
-        await startOrder(this.context, id);
+        await startOrder(ensureContext(), id);
       } else {
-        await completeOrder(this.context, id);
+        await completeOrder(ensureContext(), id);
       }
       await this.load();
     } catch (error) {

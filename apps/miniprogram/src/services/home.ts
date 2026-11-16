@@ -31,7 +31,12 @@ import { readStored } from '../platform/wechat';
 import { ROUTES, fillPath } from '../core/routes';
 import { listOrders } from './orders';
 import { listChildren } from './profile';
-import { listMyServices, myProviderProfile, myVerification } from './provider-desk';
+import {
+  listMyServices,
+  myProviderProfile,
+  myProviderStatus,
+  myVerification,
+} from './provider-desk';
 import type {
   ConversationListResponse,
   OrderResponse,
@@ -106,18 +111,21 @@ export async function loadHome(context: MentorContext): Promise<HomeView> {
   ]);
 
   let desk: HomeView['desk'] = null;
-  try {
-    const profile = await myProviderProfile(context);
-    desk = {
-      id: profile.id,
-      publicName: profile.name,
-      approved: profile.approvalStatus === 'APPROVED',
-      searchable: profile.searchableText.includes('可'),
-      ratingText: profile.ratingText,
-    };
-  } catch {
-    // Not a mentor yet: the home still works, and the desk entry leads to
-    // applying (T032).
+  // A probe, not a 404: most accounts are parents, and that is a normal state.
+  const hasProfile = await myProviderStatus(context).catch(() => false);
+  if (hasProfile) {
+    try {
+      const profile = await myProviderProfile(context);
+      desk = {
+        id: profile.id,
+        publicName: profile.name,
+        approved: profile.approvalStatus === 'APPROVED',
+        searchable: profile.searchableText.includes('可'),
+        ratingText: profile.ratingText,
+      };
+    } catch {
+      // A refusal is an answer, not a failure of the page.
+    }
   }
 
   const home = orders.items.map(toHomeOrder);
