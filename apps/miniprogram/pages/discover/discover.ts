@@ -9,7 +9,14 @@ import {
 } from '../../src/core/filters';
 import type { ProviderFilter } from '../../src/core/filters';
 import { LAST_FILTER_KEY } from '../../src/core/insights';
-import { writeStored } from '../../src/platform/wechat';
+import {
+  hideLoading,
+  navigateTo,
+  showLoading,
+  showToast,
+  writeStored,
+} from '../../src/platform/wechat';
+import { openConversationWithProvider } from '../../src/services/chat';
 import { canLoadMore, loadMoreProviders, loadProviders } from '../../src/services/discovery';
 import type { ListState } from '../../src/core/paging';
 import type { ProviderRowView } from '../../src/core/provider-view';
@@ -34,6 +41,7 @@ interface DiscoverData {
   activeCount: number;
   summary: string[];
   showFilter: boolean;
+  contacting: boolean;
 }
 
 type PageInstance = WechatMiniprogram.Page.Instance<DiscoverData, { context: MentorContext }> & {
@@ -56,6 +64,7 @@ const pageOptions = {
     activeCount: 0,
     summary: [] as string[],
     showFilter: false,
+    contacting: false,
   },
 
   context: ensureContext(),
@@ -203,6 +212,33 @@ const pageOptions = {
       summary: [],
     });
     await this.load();
+  },
+
+  /**
+   * Contact this tutor instead of booking.
+   *
+   * The server resolves the owner and reuses an existing pair conversation, so
+   * this is idempotent: tapping twice lands in the same thread. `catchtap`
+   * keeps the card's own "open detail" tap from firing too.
+   */
+  async onContact(this: PageInstance, event: WechatMiniprogram.TouchEvent): Promise<void> {
+    const id = String(event.currentTarget.dataset.id ?? '');
+    if (id.length === 0 || this.data.contacting) {
+      return;
+    }
+
+    this.setData({ contacting: true });
+    showLoading('正在打开会话…');
+    try {
+      const conversationId = await openConversationWithProvider(this.context, id);
+      hideLoading();
+      this.setData({ contacting: false });
+      navigateTo(`/pages/chat/chat?id=${encodeURIComponent(conversationId)}`);
+    } catch (error) {
+      hideLoading();
+      this.setData({ contacting: false });
+      showToast(errorMessageOf(error));
+    }
   },
 
   onOpenProvider(this: PageInstance, event: WechatMiniprogram.TouchEvent): void {

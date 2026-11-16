@@ -228,6 +228,14 @@ export function redirectTo(url: string): void {
   wx.redirectTo({ url });
 }
 
+export function showLoading(title: string): void {
+  wx.showLoading({ title, mask: true });
+}
+
+export function hideLoading(): void {
+  wx.hideLoading();
+}
+
 /** A short message. `icon: 'none'` keeps a failure from looking like a success. */
 export function showToast(title: string): void {
   wx.showToast({ title, icon: 'none' });

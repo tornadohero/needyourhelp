@@ -29,6 +29,15 @@
       <view>{{item.name}}</view>
       <view class="hint">{{item.cityText}} · {{item.ratingText}} · {{item.completedText}} · {{item.fromPriceText}}</view>
       <view wx:if="{{item.headline}}" class="hint">{{item.headline}}</view>
+      <view class="row-actions">
+        <button
+          class="contact"
+          size="mini"
+          disabled="{{contacting}}"
+          data-id="{{item.id}}"
+          catchtap="onContact"
+        >联系老师</button>
+      </view>
     </view>
     <view wx:if="{{loadingMore}}" class="state">正在加载更多…</view>
     <view wx:elif="{{!hasMore}}" class="hint">已经到底了。</view>

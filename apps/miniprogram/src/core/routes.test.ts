@@ -35,6 +35,7 @@ describe('ROUTES', () => {
     expect(ROUTES.providerServiceUnpublish).toBe(ENDPOINTS.providerServiceUnpublish);
     expect(ROUTES.providerSlot).toBe(ENDPOINTS.providerSlot);
     expect(ROUTES.conversations).toBe(ENDPOINTS.conversations);
+    expect(ROUTES.conversationWithProvider).toBe(ENDPOINTS.conversationWithProvider);
     expect(ROUTES.conversationDetail).toBe(ENDPOINTS.conversationDetail);
     expect(ROUTES.conversationMessages).toBe(ENDPOINTS.conversationMessages);
     expect(ROUTES.orders).toBe(ENDPOINTS.orders);

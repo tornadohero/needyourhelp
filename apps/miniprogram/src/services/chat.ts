@@ -43,6 +43,27 @@ export async function listConversations(context: MentorContext): Promise<Convers
   });
 }
 
+/**
+ * Open (or reuse) a conversation with a tutor found on discovery.
+ *
+ * The client sends the **provider id** only. Who owns that profile is the
+ * server's answer: the public provider DTO must never carry a user id
+ * (`specs/07`, `specs/09`). An existing pair conversation is reused, so
+ * tapping "联系" twice does not create two threads.
+ */
+export async function openConversationWithProvider(
+  context: MentorContext,
+  providerId: string,
+): Promise<string> {
+  return context.session.withSession(async (accessToken) => {
+    const conversation = await context.client.post<ConversationResponse>(
+      ROUTES.conversationWithProvider,
+      { accessToken, body: { providerId } },
+    );
+    return conversation.id;
+  });
+}
+
 /** The last message of a thread, or `null` when it has none yet. */
 async function lastMessage(
   context: MentorContext,

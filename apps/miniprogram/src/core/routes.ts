@@ -40,6 +40,7 @@ export const ROUTES = {
   providerSlot: '/providers/me/availability/:id',
 
   conversations: '/conversations',
+  conversationWithProvider: '/conversations/with-provider',
   conversationDetail: '/conversations/:id',
   conversationMessages: '/conversations/:id/messages',
   block: '/users/:id/block',

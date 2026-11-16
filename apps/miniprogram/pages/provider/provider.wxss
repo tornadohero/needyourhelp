@@ -44,3 +44,21 @@
 .button {
   margin-top: 24rpx;
 }
+
+.actions {
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+}
+
+.actions .contact {
+  flex: 1;
+  margin-top: 24rpx;
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  border: 1rpx solid var(--border);
+}
+
+.actions .button {
+  flex: 1;
+}

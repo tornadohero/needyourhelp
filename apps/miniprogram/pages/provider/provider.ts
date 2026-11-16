@@ -2,8 +2,9 @@ import { ensureContext } from '../../src/app-context';
 import type { MentorContext } from '../../src/app-context';
 import { errorMessageOf } from '../../src/core/errors';
 import { loadProviderDetail } from '../../src/services/discovery';
+import { openConversationWithProvider } from '../../src/services/chat';
 import type { ProviderDetailView, ReviewRowView, SlotRowView } from '../../src/core/provider-view';
-import { navigateTo } from '../../src/platform/wechat';
+import { hideLoading, navigateTo, showLoading, showToast } from '../../src/platform/wechat';
 
 /**
  * 导师详情（T030）— `specs/11` §Parent pages：Tutor detail / Service detail.
@@ -19,6 +20,7 @@ interface ProviderData {
   provider: ProviderDetailView | null;
   reviews: ReviewRowView[];
   slots: SlotRowView[];
+  contacting: boolean;
 }
 
 type PageInstance = WechatMiniprogram.Page.Instance<ProviderData, { context: MentorContext }> & {
@@ -30,6 +32,7 @@ const pageOptions = {
   data: {
     loading: true,
     error: '',
+    contacting: false,
     provider: null as ProviderDetailView | null,
     reviews: [] as ReviewRowView[],
     slots: [] as SlotRowView[],
@@ -65,6 +68,33 @@ const pageOptions = {
    * Nothing is chosen or priced here: the booking screen asks for the service,
    * the slot and the child, and the server decides the money (T031).
    */
+  /**
+   * Contact this tutor instead of booking.
+   *
+   * The server resolves the owner and reuses an existing pair conversation, so
+   * this is idempotent: tapping twice lands in the same thread. `catchtap`
+   * keeps the card's own "open detail" tap from firing too.
+   */
+  async onContact(this: PageInstance): Promise<void> {
+    const id = this.providerId;
+    if (id.length === 0 || this.data.contacting) {
+      return;
+    }
+
+    this.setData({ contacting: true });
+    showLoading('正在打开会话…');
+    try {
+      const conversationId = await openConversationWithProvider(this.context, id);
+      hideLoading();
+      this.setData({ contacting: false });
+      navigateTo(`/pages/chat/chat?id=${encodeURIComponent(conversationId)}`);
+    } catch (error) {
+      hideLoading();
+      this.setData({ contacting: false });
+      showToast(errorMessageOf(error));
+    }
+  },
+
   onBook(this: PageInstance): void {
     navigateTo(`/pages/booking/booking?providerId=${encodeURIComponent(this.providerId)}`);
   },

@@ -79,3 +79,17 @@
   padding: 16rpx;
   margin-bottom: 16rpx;
 }
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12rpx;
+}
+
+.contact {
+  margin: 0;
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  border: 1rpx solid var(--border);
+  font-size: 24rpx;
+}
