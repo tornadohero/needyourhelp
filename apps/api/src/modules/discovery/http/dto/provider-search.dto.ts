@@ -1,5 +1,15 @@
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  Min,
+} from 'class-validator';
 
 import {
   CAPABILITY_TYPES,
@@ -78,6 +88,21 @@ export class ProviderSearchQueryDto {
   @Min(0)
   @Max(MAX_PRICE_FILTER_MINOR)
   readonly maxPrice?: number;
+
+  /** Lowest average rating, on the platform's 0–5 scale. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(5)
+  readonly minRating?: number;
+
+  /** Lowest number of completed lessons (public evidence of experience). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  readonly minCompletedOrders?: number;
 
   @IsOptional()
   @Transform(toBoolean)

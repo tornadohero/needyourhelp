@@ -67,6 +67,25 @@ describe('discovery policy', () => {
     }
   });
 
+  it('bounds the rating and experience filters', () => {
+    const query = normalizeSearchQuery({ minRating: 4.5, minCompletedOrders: 30 });
+    expect(query.minRating).toBe(4.5);
+    expect(query.minCompletedOrders).toBe(30);
+
+    expect(normalizeSearchQuery({}).minRating).toBeNull();
+    expect(normalizeSearchQuery({}).minCompletedOrders).toBeNull();
+
+    for (const invalid of [
+      { minRating: -0.1 },
+      { minRating: 5.1 },
+      { minRating: Number.NaN },
+      { minCompletedOrders: -1 },
+      { minCompletedOrders: 1.5 },
+    ]) {
+      expect(() => normalizeSearchQuery(invalid), JSON.stringify(invalid)).toThrow();
+    }
+  });
+
   it('rejects unknown enumerations and malformed codes', () => {
     for (const invalid of [
       { domain: 'MEDICAL' },

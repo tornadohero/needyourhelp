@@ -152,6 +152,12 @@ function buildWhere(query: ProviderSearchQuery): Prisma.ProviderProfileWhereInpu
   if (query.capabilityType) {
     conditions.push({ capabilities: { some: { capabilityType: query.capabilityType } } });
   }
+  if (query.minRating !== null && query.minRating !== undefined) {
+    conditions.push({ ratingAvg: { gte: query.minRating } });
+  }
+  if (query.minCompletedOrders !== null && query.minCompletedOrders !== undefined) {
+    conditions.push({ completedOrderCount: { gte: query.minCompletedOrders } });
+  }
   if (query.verifiedOnly) {
     // `FULL` = identity and education approved (T006); it is the only level the
     // platform presents as "verified".

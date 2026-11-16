@@ -30,6 +30,8 @@ export interface RawProviderSearchQuery {
   deliveryMode?: string;
   minPrice?: number;
   maxPrice?: number;
+  minRating?: number;
+  minCompletedOrders?: number;
   verifiedOnly?: boolean;
   page?: number;
   pageSize?: number;
@@ -58,6 +60,8 @@ export function normalizeSearchQuery(input: RawProviderSearchQuery): ProviderSea
   const pageSize = assertPageSize(input.pageSize);
   const minPriceMinor = assertPriceFilter(input.minPrice, 'minPrice');
   const maxPriceMinor = assertPriceFilter(input.maxPrice, 'maxPrice');
+  const minRating = assertRatingFilter(input.minRating);
+  const minCompletedOrders = assertCountFilter(input.minCompletedOrders);
 
   if (minPriceMinor !== null && maxPriceMinor !== null && minPriceMinor > maxPriceMinor) {
     throw providerInvalidState('minPrice must not be greater than maxPrice.');
@@ -77,6 +81,8 @@ export function normalizeSearchQuery(input: RawProviderSearchQuery): ProviderSea
   }
 
   return {
+    minRating,
+    minCompletedOrders,
     domain: (input.domain as ProviderSearchQuery['domain']) ?? 'TUTORING',
     cityCode: normalizeCode(input.city, 'city'),
     capabilityType: (input.providerType as ProviderSearchQuery['capabilityType']) ?? null,
@@ -90,6 +96,28 @@ export function normalizeSearchQuery(input: RawProviderSearchQuery): ProviderSea
     pageSize,
     sort: (input.sort as ProviderSort) ?? 'relevance',
   };
+}
+
+/** A rating filter is bounded by the platform's 0–5 scale, never a guess. */
+function assertRatingFilter(value: number | undefined): number | null {
+  if (value === undefined) {
+    return null;
+  }
+  if (!Number.isFinite(value) || value < 0 || value > 5) {
+    throw providerInvalidState('minRating must be between 0 and 5.');
+  }
+  return Math.round(value * 100) / 100;
+}
+
+/** Completed lessons are a whole, non-negative count. */
+function assertCountFilter(value: number | undefined): number | null {
+  if (value === undefined) {
+    return null;
+  }
+  if (!Number.isInteger(value) || value < 0) {
+    throw providerInvalidState('minCompletedOrders must be a non-negative integer.');
+  }
+  return value;
 }
 
 /** A provider id is opaque: an unparseable one is simply not found. */

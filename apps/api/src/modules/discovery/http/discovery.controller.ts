@@ -55,6 +55,8 @@ export class DiscoveryController {
           minPrice: query.minPrice,
           maxPrice: query.maxPrice,
           verifiedOnly: query.verifiedOnly,
+          minRating: query.minRating,
+          minCompletedOrders: query.minCompletedOrders,
           page: query.page,
           pageSize: query.pageSize,
           sort: query.sort,

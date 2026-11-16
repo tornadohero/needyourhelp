@@ -36,6 +36,9 @@ export interface ProviderSearchQuery {
   /** Minor units; the filters bound the price of a published service. */
   minPriceMinor?: number | null;
   maxPriceMinor?: number | null;
+  /** `null` means no lower bound; both are hard constraints, never a score. */
+  minRating?: number | null;
+  minCompletedOrders?: number | null;
   verifiedOnly: boolean;
   page: number;
   pageSize: number;
