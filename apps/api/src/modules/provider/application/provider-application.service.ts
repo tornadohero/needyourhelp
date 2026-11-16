@@ -132,6 +132,18 @@ export class ProviderApplicationService {
     return { profile, capabilities };
   }
 
+  /**
+   * `GET /providers/me/status`.
+   *
+   * "No application yet" is a normal state for a parent account, not an error.
+   * A probe lets the client avoid turning a 404 into a console error on every
+   * home visit while `GET /providers/me` keeps its strict not-found semantics.
+   */
+  async hasApplication(userId: string, providerType: ProviderType = 'TUTORING'): Promise<boolean> {
+    const profile = await this.profiles.findByUserAndType(userId, providerType);
+    return profile !== null;
+  }
+
   /** `GET /providers/me`. */
   async getMyApplication(
     userId: string,

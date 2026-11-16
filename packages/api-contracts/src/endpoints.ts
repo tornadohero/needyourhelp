@@ -26,6 +26,7 @@ export const ENDPOINTS = {
   providers: '/providers',
   providerApplications: '/providers/applications',
   providerMe: '/providers/me',
+  providerMeStatus: '/providers/me/status',
   providerSubmit: '/providers/me/submit',
   providerServices: '/providers/me/services',
   /** Full replacement with PUT: a WeChat client cannot send PATCH. */

@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import type { ProviderProfileResponse } from '@mentor/api-contracts';
+import type { ProviderMeStatusResponse, ProviderProfileResponse } from '@mentor/api-contracts';
 
 import { JwtAuthGuard } from '../../auth/http/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/http/decorators/current-user.decorator';
@@ -64,6 +64,21 @@ export class ProviderController {
       });
       return toProviderProfileResponse(application.profile, application.capabilities);
     });
+  }
+
+  /** `GET /providers/me/status`: cheap, always 200, never a 404. */
+  @Get('me/status')
+  @UseGuards(JwtAuthGuard)
+  async myStatus(
+    @CurrentUser() principal: AuthPrincipal,
+    @Query() query: ProviderQueryDto,
+  ): Promise<ProviderMeStatusResponse> {
+    return {
+      hasProfile: await this.applications.hasApplication(
+        principal.userId,
+        query.providerType ?? 'TUTORING',
+      ),
+    };
   }
 
   @Get('me')

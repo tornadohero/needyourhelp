@@ -112,3 +112,8 @@ export interface ProviderProfileResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+/** `GET /providers/me/status`: a probe, so "not a mentor yet" is not a 404. */
+export interface ProviderMeStatusResponse {
+  hasProfile: boolean;
+}

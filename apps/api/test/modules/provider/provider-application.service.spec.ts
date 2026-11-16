@@ -36,6 +36,25 @@ async function newUser(context: ReturnType<typeof build>): Promise<string> {
   return user.id;
 }
 
+describe('hasApplication (the /providers/me/status probe)', () => {
+  it('answers false for an account without a provider record', async () => {
+    const context = build();
+    const userId = await newUser(context);
+    expect(await context.service.hasApplication(userId)).toBe(false);
+  });
+
+  it('answers true once an application exists', async () => {
+    const context = build();
+    const userId = await newUser(context);
+    await context.service.createApplication(userId, {
+      providerType: 'TUTORING',
+      publicName: '李老师',
+      capabilityTypes: ['STUDENT_TUTOR'],
+    });
+    expect(await context.service.hasApplication(userId)).toBe(true);
+  });
+});
+
 describe('ProviderApplicationService', () => {
   let context: ReturnType<typeof build>;
 
