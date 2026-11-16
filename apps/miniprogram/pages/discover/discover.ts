@@ -51,6 +51,11 @@ interface DiscoverData {
   ratingIndex: number;
   lessonsLabels: string[];
   lessonsIndex: number;
+  /** WXML cannot index an array with a variable; the labels are computed here. */
+  cityLabelText: string;
+  distanceLabelText: string;
+  ratingLabelText: string;
+  lessonsLabelText: string;
 }
 
 type PageInstance = WechatMiniprogram.Page.Instance<DiscoverData, { context: MentorContext }> & {
@@ -79,6 +84,28 @@ function lessonsIndex(draft: ProviderFilter): number {
   return index < 0 ? 0 : index;
 }
 
+/** The four labels a `<picker>` shows, from the current draft. */
+function labelTexts(draft: ProviderFilter): {
+  cityLabelText: string;
+  distanceLabelText: string;
+  ratingLabelText: string;
+  lessonsLabelText: string;
+} {
+  const labels = {
+    city: cityLabels(),
+    distance: ['不限距离', '线上（不限距离）', '同城线下', '两者都可'],
+    rating: ['不限', '4.0 分以上', '4.5 分以上', '4.8 分以上'],
+    lessons: ['不限', '10 人次以上', '30 人次以上', '50 人次以上'],
+  };
+
+  return {
+    cityLabelText: labels.city[cityIndexOf(draft.city)] ?? labels.city[0] ?? '',
+    distanceLabelText: labels.distance[distanceIndex(draft)] ?? labels.distance[0] ?? '',
+    ratingLabelText: labels.rating[ratingIndex(draft)] ?? labels.rating[0] ?? '',
+    lessonsLabelText: labels.lessons[lessonsIndex(draft)] ?? labels.lessons[0] ?? '',
+  };
+}
+
 const pageOptions = {
   data: {
     loading: true,
@@ -102,6 +129,10 @@ const pageOptions = {
     ratingIndex: 0,
     lessonsLabels: ['不限', '10 人次以上', '30 人次以上', '50 人次以上'],
     lessonsIndex: 0,
+    cityLabelText: CITY_OPTIONS[0]?.name ?? '不限城市',
+    distanceLabelText: '不限距离',
+    ratingLabelText: '不限',
+    lessonsLabelText: '不限',
   },
 
   state: { items: [], total: 0, page: 0, pageSize: 20 } as ListState<ProviderRowView>,
@@ -167,6 +198,7 @@ const pageOptions = {
       distanceIndex: distanceIndex(draft),
       ratingIndex: ratingIndex(draft),
       lessonsIndex: lessonsIndex(draft),
+      ...labelTexts(draft),
     });
   },
 
@@ -180,7 +212,8 @@ const pageOptions = {
     if (index < 0 || index >= CITY_OPTIONS.length) {
       return;
     }
-    this.setData({ cityIndex: index, draft: { ...this.data.draft, city: cityCodeAt(index) } });
+    const draft = { ...this.data.draft, city: cityCodeAt(index) };
+    this.setData({ cityIndex: index, draft, ...labelTexts(draft) });
   },
 
   /** The platform has no coordinates: online ignores distance, offline is local. */
@@ -190,7 +223,8 @@ const pageOptions = {
     if (mode === undefined) {
       return;
     }
-    this.setData({ distanceIndex: index, draft: { ...this.data.draft, deliveryMode: mode } });
+    const draft = { ...this.data.draft, deliveryMode: mode };
+    this.setData({ distanceIndex: index, draft, ...labelTexts(draft) });
   },
 
   onRatingChange(this: PageInstance, event: WechatMiniprogram.CustomEvent): void {
@@ -199,7 +233,8 @@ const pageOptions = {
     if (minimum === undefined) {
       return;
     }
-    this.setData({ ratingIndex: index, draft: { ...this.data.draft, minRating: minimum } });
+    const draft = { ...this.data.draft, minRating: minimum };
+    this.setData({ ratingIndex: index, draft, ...labelTexts(draft) });
   },
 
   onLessonsChange(this: PageInstance, event: WechatMiniprogram.CustomEvent): void {
@@ -208,10 +243,8 @@ const pageOptions = {
     if (minimum === undefined) {
       return;
     }
-    this.setData({
-      lessonsIndex: index,
-      draft: { ...this.data.draft, minCompletedOrders: minimum },
-    });
+    const draft = { ...this.data.draft, minCompletedOrders: minimum };
+    this.setData({ lessonsIndex: index, draft, ...labelTexts(draft) });
   },
 
   onSubjectInput(this: PageInstance, event: WechatMiniprogram.Input): void {
@@ -287,6 +320,7 @@ const pageOptions = {
       distanceIndex: 0,
       ratingIndex: 0,
       lessonsIndex: 0,
+      ...labelTexts(DEFAULT_FILTER),
     });
     await this.load();
   },

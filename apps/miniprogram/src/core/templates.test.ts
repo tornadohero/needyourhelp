@@ -42,6 +42,22 @@ describe('wxml compile guards', () => {
     expect(files.length).toBeGreaterThan(10);
   });
 
+  it('never indexes an array with a variable inside {{ }}', () => {
+    // WXML only accepts literal indexes (`items[0]`). `{{labels[index]}}`
+    // fails to compile the whole template, which shows up as a blank page.
+    const offenders: string[] = [];
+    const dynamicIndex = /\{\{[^}]*\b[A-Za-z_$][\w$]*\[[A-Za-z_$][\w$]*\][^}]*\}\}/g;
+
+    for (const file of files) {
+      const source = readFileSync(file, 'utf8');
+      for (const match of source.matchAll(dynamicIndex)) {
+        offenders.push(`${path.relative(PAGES_DIR, file)}: ${match[0]}`);
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
+
   it('never puts wx:else or wx:elif on the same node as wx:for', () => {
     const offenders: string[] = [];
 

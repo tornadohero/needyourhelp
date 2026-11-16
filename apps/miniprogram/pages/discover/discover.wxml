@@ -48,14 +48,14 @@
     <view class="field">
       <text class="field-label">城市</text>
       <picker mode="selector" range="{{cityLabels}}" value="{{cityIndex}}" bindchange="onCityChange">
-        <view class="picker">{{cityLabels[cityIndex]}} ›</view>
+        <view class="picker">{{cityLabelText}} ›</view>
       </picker>
     </view>
 
     <view class="field">
       <text class="field-label">距离</text>
       <picker mode="selector" range="{{distanceLabels}}" value="{{distanceIndex}}" bindchange="onDistanceChange">
-        <view class="picker">{{distanceLabels[distanceIndex]}} ›</view>
+        <view class="picker">{{distanceLabelText}} ›</view>
       </picker>
     </view>
     <view class="field-note">平台暂无定位数据：线上不限距离，线下按同城判定。</view>
@@ -63,14 +63,14 @@
     <view class="field">
       <text class="field-label">评分</text>
       <picker mode="selector" range="{{ratingLabels}}" value="{{ratingIndex}}" bindchange="onRatingChange">
-        <view class="picker">{{ratingLabels[ratingIndex]}} ›</view>
+        <view class="picker">{{ratingLabelText}} ›</view>
       </picker>
     </view>
 
     <view class="field">
       <text class="field-label">上课人次</text>
       <picker mode="selector" range="{{lessonsLabels}}" value="{{lessonsIndex}}" bindchange="onLessonsChange">
-        <view class="picker">{{lessonsLabels[lessonsIndex]}} ›</view>
+        <view class="picker">{{lessonsLabelText}} ›</view>
       </picker>
     </view>
 
