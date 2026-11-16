@@ -46,11 +46,15 @@ function harness(answers: Answer[] = []) {
 }
 
 function slot(id: string): AvailabilitySlotResponse {
+  // Relative to now: a fixture with a fixed calendar date expires one day,
+  // and an expired slot is correctly filtered out.
+  const startAt = new Date(Date.now() + Number(id) * 24 * 60 * 60_000 + 60 * 60_000);
+  const endAt = new Date(startAt.getTime() + 60 * 60_000);
   return {
     id,
     providerId: 'provider-1',
-    startAt: `2026-11-0${id}T02:00:00.000Z`,
-    endAt: `2026-11-0${id}T03:00:00.000Z`,
+    startAt: startAt.toISOString(),
+    endAt: endAt.toISOString(),
     recurrenceRule: null,
     status: 'OPEN',
   };

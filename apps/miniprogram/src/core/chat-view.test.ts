@@ -58,25 +58,28 @@ describe('counterpartOf', () => {
 
 describe('describeConversation', () => {
   it('carries the last words and marks a booking thread', () => {
-    const row = describeConversation({
-      conversation: {
-        ...conversation([
-          { userId: 'me', role: 'BUYER', displayName: '家长' },
-          { userId: 'tutor', role: 'PROVIDER', displayName: '李老师' },
-        ]),
-        orderId: 'order-1',
+    const row = describeConversation(
+      {
+        conversation: {
+          ...conversation([
+            { userId: 'me', role: 'BUYER', displayName: '家长' },
+            { userId: 'tutor', role: 'PROVIDER', displayName: '李老师' },
+          ]),
+          orderId: 'order-1',
+        },
+        myUserId: 'me',
+        lastMessage: {
+          id: 'm1',
+          conversationId: 'conv-1',
+          senderUserId: 'tutor',
+          messageType: 'TEXT',
+          body: '周六上午的时段给您留出来了',
+          moderationStatus: 'APPROVED',
+          createdAt: '2026-10-30T14:05:00.000Z',
+        },
       },
-      myUserId: 'me',
-      lastMessage: {
-        id: 'm1',
-        conversationId: 'conv-1',
-        senderUserId: 'tutor',
-        messageType: 'TEXT',
-        body: '周六上午的时段给您留出来了',
-        moderationStatus: 'APPROVED',
-        createdAt: '2026-10-30T14:05:00.000Z',
-      },
-    });
+      NOW,
+    );
 
     expect(row.title).toBe('李老师');
     expect(row.preview).toBe('周六上午的时段给您留出来了');

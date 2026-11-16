@@ -88,11 +88,14 @@ export function counterpartOf(
 }
 
 /** Build the messages-tab row for one conversation. */
-export function describeConversation(input: {
-  conversation: ConversationResponse;
-  myUserId: string;
-  lastMessage: MessageResponse | null;
-}): ConversationRowView {
+export function describeConversation(
+  input: {
+    conversation: ConversationResponse;
+    myUserId: string;
+    lastMessage: MessageResponse | null;
+  },
+  now: Date = new Date(),
+): ConversationRowView {
   const { conversation, myUserId, lastMessage } = input;
   const other = counterpartOf(conversation, myUserId);
 
@@ -100,17 +103,21 @@ export function describeConversation(input: {
     id: conversation.id,
     title: other.name,
     preview: lastMessage?.body ?? '',
-    timeText: lastMessage ? relativeTime(lastMessage.createdAt) : '',
+    timeText: lastMessage ? relativeTime(lastMessage.createdAt, now) : '',
     orderLinked: conversation.orderId !== null,
   };
 }
 
 /** Build one chat bubble; "mine" is decided by sender id, never by order. */
-export function describeMessage(message: MessageResponse, myUserId: string): MessageView {
+export function describeMessage(
+  message: MessageResponse,
+  myUserId: string,
+  now: Date = new Date(),
+): MessageView {
   return {
     id: message.id,
     mine: message.senderUserId === myUserId,
     body: message.body,
-    timeText: relativeTime(message.createdAt),
+    timeText: relativeTime(message.createdAt, now),
   };
 }
