@@ -26,6 +26,7 @@ import { RateLimit } from '../../../common/security/rate-limit.interceptor';
 // through the emitted `design:paramtypes` metadata.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
+  ContactProviderDto,
   ConversationListQueryDto,
   CreateConversationDto,
   MessageListQueryDto,
@@ -58,6 +59,31 @@ export class ConversationController {
         providerId: body.providerId ?? null,
       });
       return toConversationResponse(conversation);
+    });
+  }
+
+  /**
+   * `POST /conversations/with-provider`: talk to a tutor found on discovery.
+   *
+   * The client never learns the owner's user id — the service resolves it,
+   * reuses an existing pair conversation, and applies every gate of `create`.
+   */
+  @RateLimit('conversations.create')
+  @Post('with-provider')
+  async contactProvider(
+    @CurrentUser() principal: AuthPrincipal,
+    @Body() body: ContactProviderDto,
+  ): Promise<ConversationResponse> {
+    return translate(async () => {
+      const conversation = await this.conversations.openWithProvider(
+        principal.userId,
+        body.providerId,
+      );
+      const response = toConversationResponse(conversation);
+      const names = await this.conversations.displayNames(
+        response.members.map((member) => member.userId),
+      );
+      return withMemberDisplayNames(response, names);
     });
   }
 

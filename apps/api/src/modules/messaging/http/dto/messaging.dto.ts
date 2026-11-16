@@ -29,6 +29,11 @@ import {
  * all three (`AGENTS.md` §7), and the global `ValidationPipe` runs with
  * `forbidNonWhitelisted`, so any extra property is rejected.
  */
+export class ContactProviderDto {
+  @IsUUID()
+  readonly providerId!: string;
+}
+
 export class CreateConversationDto {
   @IsUUID()
   readonly peerUserId!: string;

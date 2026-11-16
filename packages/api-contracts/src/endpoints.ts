@@ -36,6 +36,8 @@ export const ENDPOINTS = {
   providerAvailability: '/providers/me/availability',
   providerSlot: '/providers/me/availability/:id',
   conversations: '/conversations',
+  /** Open (or reopen) an inquiry with a discoverable tutor. */
+  conversationWithProvider: '/conversations/with-provider',
   conversationDetail: '/conversations/:id',
   orders: '/orders',
   orderDetail: '/orders/:id',

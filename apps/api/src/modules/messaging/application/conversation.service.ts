@@ -70,6 +70,40 @@ export class ConversationService {
     @Optional() @Inject(AnalyticsService) private readonly analytics?: AnalyticsService,
   ) {}
 
+  /**
+   * `POST /conversations/with-provider` — contact a tutor from discovery.
+   *
+   * The public provider DTO deliberately hides its owner's user id
+   * (`specs/07`, `specs/09` §Message policy), so the client only names the
+   * provider and the **server** resolves who to talk to. A pair has at most one
+   * open conversation in V1: an existing one is reused instead of creating a
+   * second transport conversation every time "联系" is tapped.
+   */
+  async openWithProvider(userId: string, providerId: string): Promise<Conversation> {
+    if (!isUuid(providerId)) {
+      throw providerNotFound();
+    }
+
+    const detail = await this.directory.findDiscoverable(providerId);
+    if (detail === null) {
+      throw providerNotFound();
+    }
+
+    // Never let the owner open a conversation with themselves.
+    assertPeer(userId, detail.provider.userId);
+
+    const existing = await this.conversations.listBetweenUsers(userId, detail.provider.userId);
+    const open = existing.find((conversation) => conversation.status !== 'CLOSED');
+    if (open !== undefined) {
+      return open;
+    }
+
+    return this.create(userId, {
+      peerUserId: detail.provider.userId,
+      providerId,
+    });
+  }
+
   /** `POST /conversations`. */
   async create(userId: string, command: CreateConversationCommand): Promise<Conversation> {
     assertPeer(userId, command.peerUserId);
