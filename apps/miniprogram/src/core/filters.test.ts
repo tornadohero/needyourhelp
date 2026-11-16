@@ -26,6 +26,29 @@ describe('contract drift', () => {
   });
 });
 
+describe('the new hard filters', () => {
+  it('adds rating and experience bounds to the query the server reads', () => {
+    const filter = normalizeFilter({ minRating: 4.5, minCompletedOrders: 30 });
+    expect(toSearchQuery(filter)).toMatchObject({ minRating: 4.5, minCompletedOrders: 30 });
+  });
+
+  it('drops an out-of-range rating and a fractional lesson count', () => {
+    const filter = normalizeFilter({ minRating: 9, minCompletedOrders: 1.5 });
+    expect(filter.minRating).toBeNull();
+    expect(filter.minCompletedOrders).toBeNull();
+    expect(toSearchQuery(filter)).not.toHaveProperty('minRating');
+  });
+
+  it('summarises in Chinese, including the city and the distance wording', () => {
+    const summary = filterSummary(
+      normalizeFilter({ city: 'beijing', deliveryMode: 'OFFLINE', minRating: 4.5 }),
+    );
+    expect(summary).toContain('城市 北京');
+    expect(summary).toContain('距离 同城线下');
+    expect(summary).toContain('评分 4.5 分以上');
+  });
+});
+
 describe('normalizeFilter', () => {
   it('starts from the documented defaults', () => {
     const filter = normalizeFilter();
@@ -85,7 +108,7 @@ describe('filterSummary', () => {
     const chips = filterSummary(
       normalizeFilter({ city: 'beijing', subject: 'MATH', minPrice: 20000 }),
     );
-    expect(chips).toContain('城市 BEIJING');
+    expect(chips).toContain('城市 北京');
     expect(chips).toContain('科目 MATH');
     expect(chips.some((chip) => chip.includes('200 元'))).toBe(true);
   });

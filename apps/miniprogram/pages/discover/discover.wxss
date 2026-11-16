@@ -93,3 +93,38 @@
   border: 1rpx solid var(--border);
   font-size: 24rpx;
 }
+
+/* Filter sheet: Chinese labels, one row per condition. */
+.sheet {
+  max-height: 78vh;
+  overflow-y: auto;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 4rpx;
+  border-bottom: 1rpx solid var(--border-soft);
+}
+
+.field-label {
+  font-size: 28rpx;
+  color: var(--text);
+}
+
+.picker {
+  min-width: 260rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 999rpx;
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  font-size: 26rpx;
+  text-align: right;
+}
+
+.field-note {
+  padding: 8rpx 4rpx 12rpx;
+  font-size: 22rpx;
+  color: var(--muted);
+}

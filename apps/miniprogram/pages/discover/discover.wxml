@@ -45,17 +45,39 @@
 
   <view wx:if="{{showFilter}}" class="sheet">
     <view class="section">筛选</view>
-    <input class="input" value="{{draft.city}}" placeholder="城市代码，如 BEIJING" bindinput="onCityInput" />
+    <view class="field">
+      <text class="field-label">城市</text>
+      <picker mode="selector" range="{{cityLabels}}" value="{{cityIndex}}" bindchange="onCityChange">
+        <view class="picker">{{cityLabels[cityIndex]}} ›</view>
+      </picker>
+    </view>
+
+    <view class="field">
+      <text class="field-label">距离</text>
+      <picker mode="selector" range="{{distanceLabels}}" value="{{distanceIndex}}" bindchange="onDistanceChange">
+        <view class="picker">{{distanceLabels[distanceIndex]}} ›</view>
+      </picker>
+    </view>
+    <view class="field-note">平台暂无定位数据：线上不限距离，线下按同城判定。</view>
+
+    <view class="field">
+      <text class="field-label">评分</text>
+      <picker mode="selector" range="{{ratingLabels}}" value="{{ratingIndex}}" bindchange="onRatingChange">
+        <view class="picker">{{ratingLabels[ratingIndex]}} ›</view>
+      </picker>
+    </view>
+
+    <view class="field">
+      <text class="field-label">上课人次</text>
+      <picker mode="selector" range="{{lessonsLabels}}" value="{{lessonsIndex}}" bindchange="onLessonsChange">
+        <view class="picker">{{lessonsLabels[lessonsIndex]}} ›</view>
+      </picker>
+    </view>
+
     <input class="input" value="{{draft.subject}}" placeholder="科目代码，如 MATH" bindinput="onSubjectInput" />
     <input class="input" value="{{draft.grade}}" placeholder="年级代码，如 G7" bindinput="onGradeInput" />
     <input class="input" value="{{draft.minPrice}}" placeholder="最低价（分）" bindinput="onMinPriceInput" />
     <input class="input" value="{{draft.maxPrice}}" placeholder="最高价（分）" bindinput="onMaxPriceInput" />
-
-    <view class="modes">
-      <text class="chip {{draft.deliveryMode === 'ONLINE' ? 'chip-on' : ''}}" data-mode="ONLINE" bindtap="onPickDelivery">线上</text>
-      <text class="chip {{draft.deliveryMode === 'OFFLINE' ? 'chip-on' : ''}}" data-mode="OFFLINE" bindtap="onPickDelivery">线下</text>
-      <text class="chip {{draft.deliveryMode === 'HYBRID' ? 'chip-on' : ''}}" data-mode="HYBRID" bindtap="onPickDelivery">两者</text>
-    </view>
 
     <view class="row">
       <switch checked="{{draft.verifiedOnly}}" bindchange="onToggleVerified" />

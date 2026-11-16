@@ -8,6 +8,7 @@ import {
   normalizeFilter,
 } from '../../src/core/filters';
 import type { ProviderFilter } from '../../src/core/filters';
+import { CITY_OPTIONS, cityCodeAt, cityIndexOf, cityLabels } from '../../src/core/cities';
 import { LAST_FILTER_KEY } from '../../src/core/insights';
 import {
   hideLoading,
@@ -42,6 +43,14 @@ interface DiscoverData {
   summary: string[];
   showFilter: boolean;
   contacting: boolean;
+  cityLabels: string[];
+  cityIndex: number;
+  distanceLabels: string[];
+  distanceIndex: number;
+  ratingLabels: string[];
+  ratingIndex: number;
+  lessonsLabels: string[];
+  lessonsIndex: number;
 }
 
 type PageInstance = WechatMiniprogram.Page.Instance<DiscoverData, { context: MentorContext }> & {
@@ -49,6 +58,26 @@ type PageInstance = WechatMiniprogram.Page.Instance<DiscoverData, { context: Men
   load(): Promise<void>;
   applyState(): void;
 };
+
+/** Distances are expressed through the fields the platform actually has. */
+const DISTANCE_MODES: ProviderFilter['deliveryMode'][] = ['', 'ONLINE', 'OFFLINE', 'HYBRID'];
+const RATING_MINIMUMS: (number | null)[] = [null, 4, 4.5, 4.8];
+const LESSON_MINIMUMS: (number | null)[] = [null, 10, 30, 50];
+
+function distanceIndex(draft: ProviderFilter): number {
+  const index = DISTANCE_MODES.indexOf(draft.deliveryMode);
+  return index < 0 ? 0 : index;
+}
+
+function ratingIndex(draft: ProviderFilter): number {
+  const index = RATING_MINIMUMS.indexOf(draft.minRating);
+  return index < 0 ? 0 : index;
+}
+
+function lessonsIndex(draft: ProviderFilter): number {
+  const index = LESSON_MINIMUMS.indexOf(draft.minCompletedOrders);
+  return index < 0 ? 0 : index;
+}
 
 const pageOptions = {
   data: {
@@ -65,6 +94,14 @@ const pageOptions = {
     summary: [] as string[],
     showFilter: false,
     contacting: false,
+    cityLabels: cityLabels(),
+    cityIndex: 0,
+    distanceLabels: ['不限距离', '线上（不限距离）', '同城线下', '两者都可'],
+    distanceIndex: 0,
+    ratingLabels: ['不限', '4.0 分以上', '4.5 分以上', '4.8 分以上'],
+    ratingIndex: 0,
+    lessonsLabels: ['不限', '10 人次以上', '30 人次以上', '50 人次以上'],
+    lessonsIndex: 0,
   },
 
   context: ensureContext(),
@@ -123,15 +160,59 @@ const pageOptions = {
   },
 
   onOpenFilter(this: PageInstance): void {
-    this.setData({ showFilter: true, draft: this.data.filter });
+    const draft = this.data.filter;
+    this.setData({
+      showFilter: true,
+      draft,
+      cityIndex: cityIndexOf(draft.city),
+      distanceIndex: distanceIndex(draft),
+      ratingIndex: ratingIndex(draft),
+      lessonsIndex: lessonsIndex(draft),
+    });
   },
 
   onCloseFilter(this: PageInstance): void {
     this.setData({ showFilter: false, draft: this.data.filter });
   },
 
-  onCityInput(this: PageInstance, event: WechatMiniprogram.Input): void {
-    this.setData({ draft: { ...this.data.draft, city: String(event.detail.value ?? '') } });
+  /** A picker chooses a city by its Chinese label; only the code is sent. */
+  onCityChange(this: PageInstance, event: WechatMiniprogram.CustomEvent): void {
+    const index = Number(event.detail.value ?? 0);
+    if (index < 0 || index >= CITY_OPTIONS.length) {
+      return;
+    }
+    this.setData({ cityIndex: index, draft: { ...this.data.draft, city: cityCodeAt(index) } });
+  },
+
+  /** The platform has no coordinates: online ignores distance, offline is local. */
+  onDistanceChange(this: PageInstance, event: WechatMiniprogram.CustomEvent): void {
+    const index = Number(event.detail.value ?? 0);
+    const mode = DISTANCE_MODES[index];
+    if (mode === undefined) {
+      return;
+    }
+    this.setData({ distanceIndex: index, draft: { ...this.data.draft, deliveryMode: mode } });
+  },
+
+  onRatingChange(this: PageInstance, event: WechatMiniprogram.CustomEvent): void {
+    const index = Number(event.detail.value ?? 0);
+    const minimum = RATING_MINIMUMS[index];
+    if (minimum === undefined) {
+      return;
+    }
+    this.setData({ ratingIndex: index, draft: { ...this.data.draft, minRating: minimum } });
+  },
+
+  onLessonsChange(this: PageInstance, event: WechatMiniprogram.CustomEvent): void {
+    const index = Number(event.detail.value ?? 0);
+    const minimum = LESSON_MINIMUMS[index];
+    if (minimum === undefined) {
+      return;
+    }
+    this.setData({
+      lessonsIndex: index,
+      draft: { ...this.data.draft, minCompletedOrders: minimum },
+    });
   },
 
   onSubjectInput(this: PageInstance, event: WechatMiniprogram.Input): void {
@@ -156,20 +237,13 @@ const pageOptions = {
     });
   },
 
-  onPickDelivery(this: PageInstance, event: WechatMiniprogram.TouchEvent): void {
-    const mode = String(event.currentTarget.dataset.mode ?? '');
-    const current = this.data.draft.deliveryMode;
-    const next = current === mode ? '' : (mode as ProviderFilter['deliveryMode']);
-    this.setData({ draft: { ...this.data.draft, deliveryMode: next } });
-  },
-
   /**
    * Pick a sort.
    *
    * These chips sit on the list, not in the filter sheet, so a tap is the whole
    * gesture: it applies at once and the list is re-read from the server. Only
    * the sheet's chips wait for "应用" — that is the difference between this and
-   * `onPickDelivery`.
+   * the sheet's pickers.
    *
    * Normalised on the way out, so an unknown sort falls back to the default
    * instead of producing a request the server would refuse.
@@ -210,6 +284,10 @@ const pageOptions = {
       showFilter: false,
       activeCount: 0,
       summary: [],
+      cityIndex: 0,
+      distanceIndex: 0,
+      ratingIndex: 0,
+      lessonsIndex: 0,
     });
     await this.load();
   },

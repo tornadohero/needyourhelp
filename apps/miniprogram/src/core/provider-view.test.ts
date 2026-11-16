@@ -58,7 +58,7 @@ describe('describeSearchItem', () => {
   it('renders the public fields and the price the server calculated', () => {
     expect(describeSearchItem(item())).toMatchObject({
       name: '李老师',
-      cityText: 'BEIJING',
+      cityText: '北京',
       ratingText: '4.5 分 · 12 条',
       completedText: '30 次完成',
       fromPriceText: '¥200.00 起',

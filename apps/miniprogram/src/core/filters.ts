@@ -1,5 +1,7 @@
 import type { DeliveryModeName, ProviderSortName, ProviderTypeName } from '@mentor/api-contracts';
 
+import { cityName } from './cities';
+
 /**
  * Mirrors the contract's `DELIVERY_MODES` / `PROVIDER_SORTS` (`@mentor/api-contracts`).
  *
@@ -30,6 +32,9 @@ export interface ProviderFilter {
   verifiedOnly: boolean;
   minPrice: number | null;
   maxPrice: number | null;
+  /** Lowest average rating (0–5) and fewest completed lessons. */
+  minRating: number | null;
+  minCompletedOrders: number | null;
   sort: ProviderSortName;
 }
 
@@ -42,6 +47,8 @@ export const DEFAULT_FILTER: ProviderFilter = {
   verifiedOnly: false,
   minPrice: null,
   maxPrice: null,
+  minRating: null,
+  minCompletedOrders: null,
   sort: 'relevance',
 };
 
@@ -88,6 +95,19 @@ export function normalizeFilter(filter: Partial<ProviderFilter> = {}): ProviderF
     verifiedOnly: merged.verifiedOnly === true,
     minPrice,
     maxPrice,
+    minRating:
+      typeof merged.minRating === 'number' &&
+      Number.isFinite(merged.minRating) &&
+      merged.minRating >= 0 &&
+      merged.minRating <= 5
+        ? Math.round(merged.minRating * 100) / 100
+        : null,
+    minCompletedOrders:
+      typeof merged.minCompletedOrders === 'number' &&
+      Number.isInteger(merged.minCompletedOrders) &&
+      merged.minCompletedOrders >= 0
+        ? merged.minCompletedOrders
+        : null,
     sort: isSort(merged.sort) ? merged.sort : 'relevance',
   };
 }
@@ -117,6 +137,12 @@ export function toSearchQuery(filter: ProviderFilter): Record<string, string | n
   if (filter.maxPrice !== null) {
     query.maxPrice = filter.maxPrice;
   }
+  if (filter.minRating !== null) {
+    query.minRating = filter.minRating;
+  }
+  if (filter.minCompletedOrders !== null) {
+    query.minCompletedOrders = filter.minCompletedOrders;
+  }
   if (filter.sort !== 'relevance') {
     query.sort = filter.sort;
   }
@@ -138,7 +164,7 @@ export function activeFilterCount(filter: ProviderFilter): number {
 export function filterSummary(filter: ProviderFilter): string[] {
   const chips: string[] = [];
   if (filter.city.length > 0) {
-    chips.push(`城市 ${filter.city}`);
+    chips.push(`城市 ${cityName(filter.city)}`);
   }
   if (filter.subject.length > 0) {
     chips.push(`科目 ${filter.subject}`);
@@ -147,7 +173,19 @@ export function filterSummary(filter: ProviderFilter): string[] {
     chips.push(`年级 ${filter.grade}`);
   }
   if (filter.deliveryMode.length > 0) {
-    chips.push(`方式 ${filter.deliveryMode}`);
+    const modeText =
+      filter.deliveryMode === 'ONLINE'
+        ? '线上（不限距离）'
+        : filter.deliveryMode === 'OFFLINE'
+          ? '同城线下'
+          : '线上+线下';
+    chips.push(`距离 ${modeText}`);
+  }
+  if (filter.minRating !== null) {
+    chips.push(`评分 ${filter.minRating} 分以上`);
+  }
+  if (filter.minCompletedOrders !== null) {
+    chips.push(`上课 ${filter.minCompletedOrders} 人次以上`);
   }
   if (filter.verifiedOnly) {
     chips.push('仅已验证');

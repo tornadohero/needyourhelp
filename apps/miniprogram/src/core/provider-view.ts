@@ -6,6 +6,7 @@ import type {
   ServiceResponse,
 } from '@mentor/api-contracts';
 
+import { cityName } from './cities';
 import { formatDateTime, formatDuration, formatMoney } from './format';
 
 /**
@@ -34,7 +35,7 @@ export function describeSearchItem(item: ProviderSearchItemResponse): ProviderRo
     id: item.id,
     name: item.publicName,
     headline: item.headline ?? '',
-    cityText: item.cityCode ?? '未标注城市',
+    cityText: cityName(item.cityCode),
     ratingText:
       item.ratingCount > 0 && item.ratingAvg !== null
         ? `${item.ratingAvg.toFixed(1)} 分 · ${item.ratingCount} 条`
@@ -84,7 +85,7 @@ export function describeProviderDetail(detail: ProviderDetailResponse): Provider
     name: detail.publicName,
     headline: detail.headline ?? '',
     bio: detail.bio ?? '',
-    cityText: detail.cityCode ?? '未标注城市',
+    cityText: cityName(detail.cityCode),
     ratingText:
       detail.ratingCount > 0 && detail.ratingAvg !== null
         ? `${detail.ratingAvg.toFixed(1)} 分 · ${detail.ratingCount} 条`
